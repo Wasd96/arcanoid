@@ -1,8 +1,10 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
-#include "core.h"
+#include "level.h"
 
+#include <cmath>
+#include <time.h>
 #include <QWidget>
 #include <QPainter>
 #include <QPaintEvent>
@@ -24,9 +26,13 @@ public:
 
     void paintEvent(QPaintEvent *ev);
 
-    //void repaint();
+    void timerEvent(QTimerEvent *t);
 
     void mousePressEvent(QMouseEvent *m);
+
+    void mouseMoveEvent(QMouseEvent *m);
+
+    void start_game();
 
 private slots:
 
@@ -37,7 +43,10 @@ private slots:
 private:
     Ui::Widget *ui;
 
-    Core core;
+    Level *level;
+
+    int timer;
+    bool game_running;
 };
 
 #endif // WIDGET_H

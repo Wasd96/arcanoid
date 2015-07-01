@@ -2,6 +2,8 @@
 #define LEVEL_H
 
 #include "brick.h"
+#include "time.h"
+#include "cmath"
 
 class Level
 {
@@ -11,17 +13,41 @@ private:
     short grid_x; // кол-во клеток по х
     short grid_y; // кол-во клеток по у
 
+    int board_x;
+    int board_y;
+    int board_height;
+    int board_width;
+
+    double ball_x;
+    double ball_y;
+    double ball_speed;
+    double ball_angle;
+
+
     QList <Brick> map; // карта
 
 public:
     Level();
-    Level(short x, short y);
+    Level(short x, short y, double angle);
 
-    void load_map(int curr_level);
+    void load_map();
 
     void set_brick_size(int w, int h);
     void set_grid(int x, int y);
+    void set_board_coord(int x, int y);
+    void set_ball_coord(double x, double y);
+    void set_ball_angle(int angle);
+    int ball_update(int width, int height);
 
+
+    double get_ball_x() { return ball_x; }
+    double get_ball_y() { return ball_y; }
+    double get_ball_speed() { return ball_speed; }
+    double get_ball_angle() { return ball_angle; }
+    int get_board_x() { return board_x; }
+    int get_board_y() { return board_y; }
+    int get_board_width() { return board_width; }
+    int get_board_height() { return board_height; }
     short get_brick_size_x() { return brick_size_x; }
     short get_brick_size_y() { return brick_size_y; }
     short get_grid_x() { return grid_x; }
