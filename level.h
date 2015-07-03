@@ -1,9 +1,10 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
+#include <QDebug>
+#include <cmath>
+
 #include "brick.h"
-#include "time.h"
-#include "cmath"
 
 class Level
 {
@@ -13,15 +14,15 @@ private:
     short grid_x; // кол-во клеток по х
     short grid_y; // кол-во клеток по у
 
-    int board_x;
+    int board_x; // параметры доски
     int board_y;
     int board_height;
     int board_width;
 
-    double ball_x;
+    double ball_x; // параметры шарика
     double ball_y;
-    double ball_speed;
-    double ball_angle;
+    double ball_speed; // скорость
+    double ball_angle; // угол движения
 
 
     QList <Brick> map; // карта
@@ -30,14 +31,14 @@ public:
     Level();
     Level(short x, short y, double angle);
 
-    void load_map();
+    void load_map(); // создать карту
 
     void set_brick_size(int w, int h);
     void set_grid(int x, int y);
     void set_board_coord(int x, int y);
     void set_ball_coord(double x, double y);
     void set_ball_angle(int angle);
-    int ball_update(int width, int height);
+    int ball_update(int width, int height); // обработка шарика и его коллизий
 
 
     double get_ball_x() { return ball_x; }

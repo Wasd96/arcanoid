@@ -3,7 +3,6 @@
 
 #include "level.h"
 
-#include <cmath>
 #include <time.h>
 #include <QWidget>
 #include <QPainter>
@@ -22,7 +21,7 @@ public:
     explicit Widget(QWidget *parent = 0);
     ~Widget();
 
-    void menu_change_state(bool state);
+    void menu_change_state(bool state); // спрятать/открыть меню
 
     void paintEvent(QPaintEvent *ev);
 
@@ -32,7 +31,7 @@ public:
 
     void mouseMoveEvent(QMouseEvent *m);
 
-    void start_game();
+    void start_game(); // старт игры (кэп)
 
 private slots:
 
