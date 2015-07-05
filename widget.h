@@ -31,21 +31,22 @@ public:
 
     void mouseMoveEvent(QMouseEvent *m);
 
-    void start_game(); // старт игры (кэп)
-
 private slots:
 
     void on_exit_button_clicked();
 
     void on_start_button_clicked();
 
+    void on_menu_clicked();
+
 private:
-    Ui::Widget *ui;
+    Ui::Widget *ui; // Qt-шный виджет
 
     Level *level;
 
-    int timer;
-    bool game_running;
+    int timer; // таймер обработки событий
+    bool game_running; // игра запущена
+    bool game_over; // игра проиграна
 };
 
 #endif // WIDGET_H

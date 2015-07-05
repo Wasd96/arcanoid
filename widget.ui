@@ -71,7 +71,7 @@
 	background-color: rgb(1, 7, 45);
     border: 2px outset blue;
     border-radius: 15px;
-    font: 25px;
+    font: 30px;
 color: qlineargradient(spread:pad, x1:0.318, y1:0.0113636, x2:0.114, y2:0.835, stop:0 rgba(12, 196, 0, 255), stop:1 rgba(20, 128, 20, 255));
 	font: bold;
 	width: 300px;
@@ -98,14 +98,106 @@ QPushButton:pressed  {
   <widget class="QPushButton" name="exit_button">
    <property name="geometry">
     <rect>
-     <x>200</x>
-     <y>470</y>
-     <width>131</width>
+     <x>150</x>
+     <y>550</y>
+     <width>241</width>
      <height>71</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton  {
+	background-color: rgb(1, 7, 45);
+    border: 2px outset blue;
+    border-radius: 15px;
+    font: 25px;
+	color: lightgreen;
+	width: 300px;
+	height: 60px;
+}
+
+
+QPushButton:hover {
+	background-color: rgb(11, 37, 98);
+	color: qlineargradient(spread:pad, x1:0.318, y1:0.0113636, x2:0.114, y2:0.835, stop:0 rgba(42, 226, 30, 255), stop:1 rgba(40, 148, 40, 255));
+}
+
+QPushButton:pressed  {
+	background-color: rgb(54, 54, 4);
+    border-style: inset;
+	color: qlineargradient(spread:pad, x1:0.318, y1:0.0113636, x2:0.114, y2:0.835, stop:0 rgba(255, 223, 40, 255), stop:1 rgba(167, 122, 30, 255))
+}
+</string>
+   </property>
    <property name="text">
     <string>Выход</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="menu">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>580</y>
+     <width>131</width>
+     <height>66</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton  {
+    background-color: rgb(1, 7, 45);
+    border: 3px solid blue;
+    border-top-right-radius: 70px 40px;
+    font: 25px;
+	color: lightgreen;
+    min-width: 4em;
+	min-height: 2em;
+	padding-left: 5px;
+}
+
+QPushButton:pressed  {
+    background-color: rgb(54, 54, 4);
+    border-style: inset;
+	color: yellow;
+}</string>
+   </property>
+   <property name="text">
+    <string>Меню</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="about_button">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>450</y>
+     <width>241</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton  {
+	background-color: rgb(1, 7, 45);
+    border: 2px outset blue;
+    border-radius: 15px;
+    font: 25px;
+	color: lightgreen;
+	width: 300px;
+	height: 60px;
+}
+
+
+QPushButton:hover {
+	background-color: rgb(11, 37, 98);
+	color: qlineargradient(spread:pad, x1:0.318, y1:0.0113636, x2:0.114, y2:0.835, stop:0 rgba(42, 226, 30, 255), stop:1 rgba(40, 148, 40, 255));
+}
+
+QPushButton:pressed  {
+	background-color: rgb(54, 54, 4);
+    border-style: inset;
+	color: qlineargradient(spread:pad, x1:0.318, y1:0.0113636, x2:0.114, y2:0.835, stop:0 rgba(255, 223, 40, 255), stop:1 rgba(167, 122, 30, 255))
+}
+</string>
+   </property>
+   <property name="text">
+    <string>Об игре</string>
    </property>
   </widget>
  </widget>
