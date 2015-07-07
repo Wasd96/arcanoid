@@ -11,16 +11,19 @@ Widget::Widget(QWidget *parent) :
     menu_change_state(true);
     srand(time(NULL)); // инициализация рандома
 
-    level = new Level(5,5,-55-rand()%70); // инициализация основного класса игры
+    level = new Level(5,5,55+rand()%70); // инициализация основного класса игры
 
     //showFullScreen(); // все равно не работает на телефоне
 
-    timer = startTimer(3); // таймер обработки шарика и отрисовки
+    timer = startTimer(10); // таймер обработки шарика и отрисовки
     game_running = false;
     game_over = false;
+    game_win = false;
 
     ui->menu->setVisible(false);
     ui->menu->setEnabled(false);
+    ui->about->setEnabled(false);
+    ui->about->setVisible(false);
 }
 
 Widget::~Widget()
@@ -39,7 +42,11 @@ void Widget::timerEvent(QTimerEvent *t)
             game_over = true;
             game_running = false;
         }
-        else if (state = 0);
+        else if (state == 1) // победа
+        {
+            game_win = true;
+            game_running = false;
+        }
 
 
 
@@ -58,14 +65,14 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
     if (!game_running)
     {
         ui->start_button->setGeometry(width()/2 - ui->start_button->width()/2,
-                                      height()/7*4,width()/7*4, height()/10);
+                                      height()/9*5,width()/7*4, height()/9);
         ui->about_button->setGeometry(width()/2 - ui->about_button->width()/2,
                                height()/7*5, width()/3, height()/10);
         ui->exit_button->setGeometry(width()/2 - ui->exit_button->width()/2,
                                       height()/7*6, width()/3, height()/10);
     }
 
-    if (game_running || game_over)
+    if (game_running || game_over || game_win)
     {
         // отрисовка уровня
         p.fillRect(0,height()/2,width(),height(),Qt::black);
@@ -99,17 +106,27 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
         p.drawEllipse(level->get_ball_x(), level->get_ball_y(), 5, 5);
     }
 
-    if (game_over) // проигрыш
+    if (game_over || game_win) // проигрыш
     {
-        pen.setColor(Qt::red);
+        if (game_over)
+            pen.setColor(Qt::red);
+        else
+            pen.setColor(Qt::green);
         p.setPen(pen);
         QFont font;
-        font.setPixelSize(2);
-        p.drawText(width()/4, height()/2, "Game Over");
+        font.setPixelSize(width()/14);
+        p.setFont(font);
+        QString str;
+        if (game_over)
+            str = "Поражение :(";
+        else
+            str = "Победа! :)";
+        p.drawText(width()/2-str.length()*font.pixelSize()/4, height()/2+80, str);
         ui->menu->setGeometry(0, height()-height()/10, width()/4, height()/10);
         ui->menu->setVisible(true);
         ui->menu->setEnabled(true);
     }
+
 
 }
 
@@ -135,12 +152,15 @@ void Widget::on_exit_button_clicked()
 void Widget::on_start_button_clicked()
 {
     menu_change_state(false);
-    level->set_grid(25,15); // создание сетки
+    level->set_grid(10,8); // создание сетки
     level->set_brick_size(width(), height()); // задание размеров блока
     level->load_map(); // загрузка текущего уровня
     level->set_ball_coord(width()/2-level->get_board_width()/2, height()/5*4 - 5);
-    level->set_ball_angle(-55-rand()%70);
-    level->set_board_coord(width()/2-level->get_board_width()/2, height()/5*4);  // начальные координат доски
+    level->set_ball_angle(55+rand()%70);
+    level->set_board_coord(364, height()/5*4);  // начальные координат доски
+    level->set_ball_speed(height()/200);
+    game_win = false;
+    game_over = false;
     game_running = true;
 }
 
@@ -148,22 +168,35 @@ void Widget::mousePressEvent(QMouseEvent *m)
 {
     if (game_running)
         level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-100);
-    ui->label->setNum(m->x()); // тестовые значения
-    ui->label_2->setNum(m->y());
 }
 
 void Widget::mouseMoveEvent(QMouseEvent *m)
 {
     if (game_running)
         level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-100);
-    ui->label->setNum(level->get_ball_angle());
-    ui->label_2->setNum(level->get_ball_speed());
 }
 
-void Widget::on_menu_clicked()
+void Widget::on_menu_clicked() // в меню
 {
+    ui->about->setEnabled(false);
+    ui->about->setVisible(false);
     ui->menu->setVisible(false);
     ui->menu->setEnabled(false);
     game_over = false;
+    game_win = false;
+    game_running = false;
     menu_change_state(true);
+}
+
+void Widget::on_about_button_clicked()
+{
+    menu_change_state(false);
+    ui->about->setEnabled(true);
+    ui->about->setVisible(true);
+    ui->about->setGeometry(width()/20, height()/20, width()/20*18, height()/20*14);
+    ui->about->setText("Это текст. \n с переносом.");
+
+    ui->menu->setGeometry(0, height()-height()/10, width()/4, height()/10);
+    ui->menu->setVisible(true);
+    ui->menu->setEnabled(true);
 }

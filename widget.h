@@ -39,6 +39,8 @@ private slots:
 
     void on_menu_clicked();
 
+    void on_about_button_clicked();
+
 private:
     Ui::Widget *ui; // Qt-шный виджет
 
@@ -47,6 +49,7 @@ private:
     int timer; // таймер обработки событий
     bool game_running; // игра запущена
     bool game_over; // игра проиграна
+    bool game_win; // победа
 };
 
 #endif // WIDGET_H

@@ -21,6 +21,8 @@ private:
 
     double ball_x; // параметры шарика
     double ball_y;
+    double ball_last_x; // костыль для системы отражений
+    double ball_last_y; // содержит предыдущюю позицию шарика
     double ball_speed; // скорость
     double ball_angle; // угол движения
 
@@ -33,13 +35,13 @@ public:
     Level(short x, short y, double angle);
 
     void load_map(); // создать карту
-    bool is_near(int number); // есть ли рядом блоки
 
     void set_brick_size(int w, int h);
     void set_grid(int x, int y); // установить размеры сетки
     void set_board_coord(int x, int y);
     void set_ball_coord(double x, double y);
     void set_ball_angle(int angle);
+    void set_ball_speed(double speed);
     int update(int width, int height); // итерация игрового мира
 
 
