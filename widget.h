@@ -8,6 +8,8 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QMouseEvent>
+#include <QFileDialog>
+#include <QKeyEvent>
 
 namespace Ui {
 class Widget;
@@ -31,6 +33,8 @@ public:
 
     void mouseMoveEvent(QMouseEvent *m);
 
+    void keyPressEvent(QKeyEvent *k);
+
 private slots:
 
     void on_exit_button_clicked();
@@ -41,6 +45,8 @@ private slots:
 
     void on_about_button_clicked();
 
+    void on_settings_button_clicked();
+
 private:
     Ui::Widget *ui; // Qt-шный виджет
 
@@ -50,6 +56,7 @@ private:
     bool game_running; // игра запущена
     bool game_over; // игра проиграна
     bool game_win; // победа
+    QImage *img; // карта-картинка
 };
 
 #endif // WIDGET_H

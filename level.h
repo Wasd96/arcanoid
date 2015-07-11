@@ -3,16 +3,18 @@
 
 #include <QDebug>
 #include <cmath>
+#include <QImage>
+#include <QRgb>
 
 #include "brick.h"
 
 class Level
 {
 private:
-    short brick_size_x; // размер кирпичика
-    short brick_size_y;
-    short grid_x; // кол-во клеток по х
-    short grid_y; // кол-во клеток по у
+    int brick_size_x; // размер кирпичика
+    int brick_size_y;
+    int grid_x; // кол-во клеток по х
+    int grid_y; // кол-во клеток по у
 
     int board_x; // параметры доски
     int board_y;
@@ -32,16 +34,16 @@ private:
 
 public:
     Level();
-    Level(short x, short y, double angle);
+    Level(int w, int h, double angle);
 
-    void load_map(); // создать карту
+    int load_map(QImage* img, int w, int h); // создать карту
+    bool is_near(int number); // есть ли рядом блоки
 
     void set_brick_size(int w, int h);
     void set_grid(int x, int y); // установить размеры сетки
     void set_board_coord(int x, int y);
     void set_ball_coord(double x, double y);
     void set_ball_angle(int angle);
-    void set_ball_speed(double speed);
     int update(int width, int height); // итерация игрового мира
 
 
@@ -53,10 +55,10 @@ public:
     int get_board_y() { return board_y; }
     int get_board_width() { return board_width; }
     int get_board_height() { return board_height; }
-    short get_brick_size_x() { return brick_size_x; }
-    short get_brick_size_y() { return brick_size_y; }
-    short get_grid_x() { return grid_x; }
-    short get_grid_y() { return grid_y; }
+    int get_brick_size_x() { return brick_size_x; }
+    int get_brick_size_y() { return brick_size_y; }
+    int get_grid_x() { return grid_x; }
+    int get_grid_y() { return grid_y; }
     int get_map_size() { return map.size(); }
     QPoint get_brick_coord(int i) { return map[i].get_coord(); }
     QColor get_brick_color(int i) { return map[i].get_color(); }
