@@ -35,6 +35,8 @@ public:
 
     void keyPressEvent(QKeyEvent *k);
 
+    void find_all_img(QString start_dir);
+
 private slots:
 
     void on_exit_button_clicked();
@@ -56,6 +58,15 @@ private:
     bool game_running; // игра запущена
     bool game_over; // игра проиграна
     bool game_win; // победа
+    bool pause; // пауза
+    bool dir_search;
+    bool image_search;
+
+    QStringList dirs_with_img;
+    QList <QPixmap> pixmap_array;
+    QStringList images;
+
+
     QImage *img; // карта-картинка
 };
 
