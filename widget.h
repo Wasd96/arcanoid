@@ -10,6 +10,7 @@
 #include <QMouseEvent>
 #include <QFileDialog>
 #include <QKeyEvent>
+#include <QTime>
 
 namespace Ui {
 class Widget;
@@ -49,6 +50,8 @@ private slots:
 
     void on_settings_button_clicked();
 
+    void on_verticalSlider_valueChanged(int value);
+
 private:
     Ui::Widget *ui; // Qt-шный виджет
 
@@ -61,10 +64,13 @@ private:
     bool pause; // пауза
     bool dir_search;
     bool image_search;
+    bool draw;
 
     QStringList dirs_with_img;
     QList <QPixmap> pixmap_array;
     QStringList images;
+    QList <QString> filter_list;
+    QDir dir;
 
 
     QImage *img; // карта-картинка

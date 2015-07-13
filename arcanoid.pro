@@ -26,3 +26,6 @@ OTHER_FILES += update.log
 
 CONFIG += mobility
 MOBILITY =
+
+RESOURCES += \
+    resource.qrc

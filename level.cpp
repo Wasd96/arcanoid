@@ -98,7 +98,7 @@ int Level::update(int width, int height)
         ball_angle = 360 + ball_angle;
     ball_angle = (int)ball_angle % 360;
 
-    ball_speed = height/120; // УБРАТЬ ПОСЛЕ НАСТРОЕК
+    ball_speed = height/400+(double)map.size()/450.0; // УБРАТЬ ПОСЛЕ НАСТРОЕК
 
 
     if (ball_x <= 0) // левая стенка

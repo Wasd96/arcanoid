@@ -19,12 +19,18 @@ Widget::Widget(QWidget *parent) :
     game_win = false;
     pause = false;
     dir_search = false;
+    image_search = false;
+    draw = false;
 
     ui->menu->setVisible(false);
     ui->menu->setEnabled(false);
     ui->about->setEnabled(false);
     ui->about->setVisible(false);
     ui->status->setGeometry(width(),-100,10,10);
+    ui->verticalSlider->setGeometry(width()-width()/10,100,width()/10,height()-200);
+
+    filter_list.append("*.jpg");
+    filter_list.append("*.png");
 
 }
 
@@ -63,10 +69,10 @@ void Widget::timerEvent(QTimerEvent *t)
         }
 
 
-
+    repaint();
     }
 
-    repaint();
+
 
 }
 
@@ -76,6 +82,11 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
     QPen pen;
     QBrush brush;
     QFont font;
+
+    /*QPixmap mp(":/new/prefix1/Bez_imeni1.png");
+    qDebug() << mp.size();
+    p.drawPixmap(0,0,mp);*/
+
 
     // отрисовка элементов
     if (!game_running)
@@ -145,6 +156,7 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
 
     }
 
+
     if (game_over || game_win) // проигрыш
     {
         if (game_over)
@@ -178,60 +190,69 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
     }
 
 
-    if (dir_search)
+    if (dir_search && draw)
     {
-
-        font.setPixelSize(40);
-        p.setFont(font);
+        int shift = ui->verticalSlider->value()*(width()/5+60)/50;
+        pen.setColor(Qt::white);
         p.setPen(pen);
-        p.drawText(10,50,"Выберите папку:");
-
         font.setPixelSize(20);
         p.setFont(font);
         QRect rect;
-        for (int i = 0; i < dirs_with_img.size(); i++)
+        for (int i = 0; i < pixmap_array.size(); i++)
         {
-            pen.setColor(Qt::white);
-            p.setPen(pen);
-            rect.setTopLeft(QPoint(10+(i%4)*(width()/5+20),100+i/4*(width()/5+30)));
+            rect.setTopLeft(QPoint(10+(i%4)*(width()/5+20),120+i/4*(width()/5+60)-shift));
             rect.setHeight(width()/5);
             rect.setWidth(width()/5);
 
             p.drawPixmap(rect,pixmap_array.at(i));
             QString str = dirs_with_img.at(i).right(dirs_with_img.at(i).size()-1 - dirs_with_img.at(i).lastIndexOf("/"));
-            p.drawText(20+(i%4)*(width()/5+20),90+i/4*(width()/5+30),str);
-            p.drawRect(rect);
-
-            /*pen.setColor(Qt::green);
-            p.setPen(pen);
-            p.drawRect(10+(i%4)*(width()/5+20),
-                       100+(i/4)*(width()/5+20),
-                       (width()/5),
-                       (width()/5));*/
+            p.drawText(10 + (i%4)*(width()/5+20),90+i/4*(width()/5+60)-shift,width()/5,width()/5,0,str);
         }
-    }
+        for (int i = 0; i < dirs_with_img.size(); i++)
+        {
+            rect.setTopLeft(QPoint(10+(i%4)*(width()/5+20),120+i/4*(width()/5+60)-shift));
+            rect.setHeight(width()/5);
+            rect.setWidth(width()/5);
+            p.drawRect(rect);
+        }
 
-    if (image_search)
-    {
-        pen.setColor(Qt::white);
+        p.fillRect(0,0,width(),80,Qt::black);
         font.setPixelSize(40);
         p.setFont(font);
-        p.setPen(pen);
-        p.drawText(10,50,"Выберите картинку для игры:");
+        p.drawText(10,50,"Выберите папку:");
+        //draw = false;
+    }
 
+    if (image_search && draw)
+    {
+        int shift = ui->verticalSlider->value()*(width()/6+5)/50;
+        pen.setColor(Qt::white);
+        p.setPen(pen);
         font.setPixelSize(20);
         p.setFont(font);
         QRect rect;
-        for (int i = 0; i < images.size(); i++)
+        for (int i = 0; i < pixmap_array.size(); i++)
         {
-            rect.setTopLeft(QPoint((i%5)*(width()/5+5),100+i/5*(width()/5+5)));
-            rect.setHeight(width()/5);
-            rect.setWidth(width()/5);
+            rect.setTopLeft(QPoint((i%5)*(width()/6+5),120+i/5*(width()/6+5)-shift));
+            rect.setHeight(width()/6);
+            rect.setWidth(width()/6);
 
             p.drawPixmap(rect,pixmap_array.at(i));
+
+        }
+        for (int i = 0; i < images.size(); i++)
+        {
+            rect.setTopLeft(QPoint((i%5)*(width()/6+5),120+i/5*(width()/6+5)-shift));
+            rect.setHeight(width()/6);
+            rect.setWidth(width()/6);
             p.drawRect(rect);
 
         }
+        p.fillRect(0,0,width(),80,Qt::black);
+        font.setPixelSize(40);
+        p.setFont(font);
+        p.drawText(10,50,"Выберите картинку для игры:");
+        //draw = false;
     }
 
 
@@ -245,12 +266,16 @@ void Widget::menu_change_state(bool state)
     ui->about_button->setEnabled(state);
     ui->settings_button->setEnabled(state);
     ui->status->setEnabled(!state);
+    ui->verticalSlider->setEnabled(!state);
 
     ui->start_button->setVisible(state);
     ui->exit_button->setVisible(state);
     ui->about_button->setVisible(state);
     ui->settings_button->setVisible(state);
     ui->status->setVisible(!state);
+    ui->verticalSlider->setVisible(!state);
+
+    repaint();
 }
 
 void Widget::on_exit_button_clicked()
@@ -268,6 +293,9 @@ void Widget::on_start_button_clicked()
     menu_change_state(false);
     ui->status->setValue(0);
     ui->status->setGeometry(width(),-100,10,10);
+
+    ui->verticalSlider->setValue(0);
+    ui->verticalSlider->setGeometry(width()-width()/10,50,width()/10,height()-100);
 
     // для виндуса!!!
     /*QFileDialog fd;
@@ -288,14 +316,26 @@ void Widget::on_start_button_clicked()
 
     pixmap_array.clear();
     images.clear();
+    dirs_with_img.clear();
+
+    QTime time1;
+    time1.start();
 
     dir_search = true;
+    #ifdef Q_OS_WIN // кроссплатформенность
+    find_all_img("C:/");
+    #else
     find_all_img("/sdcard");
     find_all_img("/storage/extSdCard");
-    //find_all_img("D:/testdir");
-    qDebug() << dirs_with_img;
+    #endif
 
 
+    draw = true;
+    repaint();
+
+    //qDebug() << dirs_with_img;
+
+    qDebug() << time1.elapsed();
 }
 
 void Widget::mousePressEvent(QMouseEvent *m)
@@ -303,31 +343,42 @@ void Widget::mousePressEvent(QMouseEvent *m)
     if (game_running && !pause)
         level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-100);
 
+
+
     if (dir_search)
     {
+        int shift = ui->verticalSlider->value()*(width()/5+60)/50;
         for (int i = 0; i < dirs_with_img.size(); i++)
         {
             if (m->x() >= 10+(i%4)*(width()/5+20)
                     && m->x() <= 10+(i%4)*(width()/5+20) + width()/5
-                    && m->y() >= 100+i/4*(width()/5+20)
-                    && m->y() <= 100+i/4*(width()/5+20) + width()/5)
+                    && m->y() >= 120+i/4*(width()/5+60) - shift
+                    && m->y() <= 120+i/4*(width()/5+60) + width()/5 - shift)
             {
                 dir_search = false;
                 image_search = true;
                 qDebug() << "pressed" << i;
+
+                ui->verticalSlider->setValue(0);
+
                 find_all_img(dirs_with_img.at(i));
+
+                on_verticalSlider_valueChanged(0);
+
+                repaint();
             }
 
         }
     }
     else if (image_search)
     {
-        for (int i = 0; i < dirs_with_img.size(); i++)
+        int shift = ui->verticalSlider->value()*(width()/6+5)/50;
+        for (int i = 0; i < images.size(); i++)
         {
-            if (m->x() >= 10+(i%4)*(width()/5+20)
-                    && m->x() <= 10+(i%4)*(width()/5+20) + width()/5
-                    && m->y() >= 100+i/4*(width()/5+20)
-                    && m->y() <= 100+i/4*(width()/5+20) + width()/5)
+            if (m->x() >= (i%5)*(width()/6+5)
+                    && m->x() <= (i%5)*(width()/6+5) + width()/6
+                    && m->y() >= 120+i/5*(width()/6+5) - shift
+                    && m->y() <= 120+i/5*(width()/6+5) + width()/6 - shift)
             {
                 dir_search = false;
                 image_search = false;
@@ -341,6 +392,8 @@ void Widget::mousePressEvent(QMouseEvent *m)
                 level->set_board_coord(width()/2-width()/5, height()/5*4);  // начальные координат доски
                 game_win = false;
                 game_running = true;
+                ui->verticalSlider->setEnabled(false);
+                ui->verticalSlider->setVisible(false);
             }
 
         }
@@ -396,6 +449,28 @@ void Widget::keyPressEvent(QKeyEvent *k)
     qDebug() << k->key();
     // 16777313 - клавиша назад
     // 16777301 - клавиша функций
+#ifdef Q_OS_WIN // кроссплатформенность
+    if (k->key() == Qt::Key_Backspace)
+    {
+        if (game_running)
+            pause = !pause;
+
+        if (dir_search)
+        {
+            dir_search = false;
+            menu_change_state(true);
+        }
+        if (image_search)
+        {
+            dir_search = true;
+            image_search = false;
+            pixmap_array.clear();
+            images.clear();
+            on_start_button_clicked();
+        }
+
+    }
+#else
     if (k->key() == Qt::Key_Back)
     {
         if (game_running)
@@ -413,43 +488,72 @@ void Widget::keyPressEvent(QKeyEvent *k)
         }
 
     }
+#endif
 
+    draw = true;
+    repaint();
 }
+
+
 
 void Widget::find_all_img(QString start_dir)
 {
-    QDir dir;
-    dir.cd(start_dir);
+    //!
+    //! \brief dir
+    //!
+    //! D:/ с фильтрами и перебором на . и .. - (3903 - 4036)
+    //! D:/ без фильтров и перебором на . и .. - (6066 - 6182)
+    //! D:/ с фильтрами без перебора на . и .. - (3880 - 3953)
+    //! D:/ с фильтрами на . и .. - (3912 - 3962)
+    //! D:/ с фильтрами и вынесенным фильтром - (1552 - 1564)
+    //!
+    //!
+    //! C:/ с фильтрами с перебором на . и .. - (302811)
+    //!
+    //!
 
-    QList <QString> filter_list;
-    QStringList dir_list = dir.entryList(filter_list, QDir::Dirs);
-    filter_list.append("");
-    filter_list.append("*.jpg");
-    filter_list.append("*.png");
-    QStringList files_list = dir.entryList(filter_list, QDir::Files);
+
+    dir.cd(start_dir);
+    QStringList dir_list = dir.entryList(QDir::Dirs | QDir::NoSymLinks);
+    QStringList files_list = dir.entryList(filter_list, QDir::Files | QDir::NoSymLinks, QDir::Time);
 
     if (dir_search)
     {
-        for (int i = 0; i < dir_list.size(); i++)
-        {
-            if (dir_list.at(i) == ".")
-                dir_list.takeAt(i);
-            if (dir_list.at(i) == "..")
-                dir_list.takeAt(i);
-        }
         if (files_list.size() != 0)
         {
+            qDebug() << start_dir << files_list.size();
             dirs_with_img.append(start_dir);
-            pixmap_array.append(QPixmap(start_dir+"/"+files_list.first()));
+            pixmap_array.append(QPixmap(start_dir+"/"+files_list.first()).scaled(width()/5,width()/5));
         }
 
         for (int i = 0; i < dir_list.size(); i++)
         {
-            if (dir_list.at(i) == "cache"
-                    || dir_list.at(i) == "data")
-                continue;
-            find_all_img(start_dir + "/" + dir_list.at(i));
+            if (start_dir == "C:/")
+            {
+                if (dir_list.at(i) == "Users")
+                    find_all_img(start_dir + "/" + dir_list.at(i));
+                else
+                    continue;
+            }
+            else
+            {
+                if (dir_list.at(i).startsWith("."))
+                    continue;
+                else if (dir_list.at(i) == "cache"
+                        || dir_list.at(i) == "data"
+                        || dir_list.at(i) == "docs"
+                        || dir_list.at(i) == "lib"
+                        || dir_list.at(i) == "help"
+                        || dir_list.at(i) == "build"
+                        || dir_list.at(i) == "plugin"
+                        || dir_list.at(i) == "features"
+                        || dir_list.at(i) == "plugins")
+                    continue;
+                find_all_img(start_dir + "/" + dir_list.at(i));
+            }
         }
+
+        ui->verticalSlider->setMaximum(dirs_with_img.size()/4*50);
     }
 
     if (image_search)
@@ -459,9 +563,30 @@ void Widget::find_all_img(QString start_dir)
         for (int i = 0; i < files_list.size(); i++)
         {
             images.append(QString(start_dir+"/"+files_list.at(i)));
-            pixmap_array.append(QPixmap(start_dir+"/"+files_list.at(i)));
+            //pixmap_array.append(QPixmap(images.last()));
+            qDebug() << "added: " << files_list.at(i);
         }
 
+        ui->verticalSlider->setMaximum(images.size()/5*50);
+        draw = true;
+        repaint();
     }
+}
 
+
+void Widget::on_verticalSlider_valueChanged(int value)
+{
+
+    if (image_search)
+    {
+        for (int i = pixmap_array.size(); i < (value+350)/50*5; i++)
+        {
+            if (i < images.size())
+            {
+                pixmap_array.append(QPixmap(images.at(i)).scaled(width()/6,width()/6));
+                repaint();
+            }
+        }
+    }
+    repaint();
 }
