@@ -277,11 +277,37 @@ margin-top: 1px;
   <widget class="QSlider" name="verticalSlider">
    <property name="geometry">
     <rect>
-     <x>650</x>
+     <x>640</x>
      <y>270</y>
-     <width>19</width>
-     <height>160</height>
+     <width>31</width>
+     <height>261</height>
     </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QSlider::groove:vertical  {
+    /*border: 1px solid blue;*/
+    width: 3px;
+    background:gray;
+    margin: 5px 0;
+}
+ 
+QSlider::handle  {
+    background: green;
+    border: 2px groove blue;
+    height: 30px;
+	width: 20px;
+    margin: 0 -14px; 
+    border-radius: 3px;
+}
+
+QSlider::handle:pressed  {
+    background: orange;
+    border: 2px groove darkblue;
+    height: 30px;
+	width: 20px;
+    margin: 0 -14px; 
+    border-radius: 3px;
+}</string>
    </property>
    <property name="orientation">
     <enum>Qt::Vertical</enum>

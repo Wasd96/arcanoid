@@ -13,7 +13,7 @@ Widget::Widget(QWidget *parent) :
 
     level = new Level(width(), height(), 55+rand()%70); // инициализация основного класса игры
 
-    timer = startTimer(5); // таймер обработки шарика и отрисовки
+    timer = startTimer(15); // таймер обработки шарика и отрисовки
     game_running = false;
     game_over = false;
     game_win = false;
@@ -78,6 +78,9 @@ void Widget::timerEvent(QTimerEvent *t)
 
 void Widget::paintEvent(QPaintEvent *ev) // отрисовка
 {
+    QTime time;
+    time.start();
+
     QPainter p(this);
     QPen pen;
     QBrush brush;
@@ -105,19 +108,18 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
     {
         // отрисовка уровня
         p.fillRect(0,height()/2,width(),height(),Qt::black);
+        int br_size_x = level->get_brick_size_x();
+        int br_size_y = level->get_brick_size_y();
+        QRect rect;
+        pen.setColor(Qt::gray);
+        p.setPen(pen);
         for (int i = 0; i < level->get_map_size(); i++)
         {
-            p.fillRect(level->get_brick_coord(i).x(), // рисуем кирпичик
-                       level->get_brick_coord(i).y(),
-                       level->get_brick_size_x(),
-                       level->get_brick_size_y(),
-                       QColor(level->get_brick_color(i)));
-            pen.setColor(Qt::gray);
-            p.setPen(pen);
-            p.drawRect(level->get_brick_coord(i).x(), // рисуем контур
-                       level->get_brick_coord(i).y(),
-                       level->get_brick_size_x(),
-                       level->get_brick_size_y());
+            rect.setTopLeft(QPoint(level->get_brick_coord(i).x(),level->get_brick_coord(i).y()));
+            rect.setWidth(br_size_x);
+            rect.setHeight(br_size_y);
+            p.fillRect(rect,QColor(level->get_brick_color(i))); // рисуем кирпичик
+            p.drawRect(rect); // рисуем контур
         }
 
         // отрисовка доски
@@ -139,9 +141,8 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
         p.setPen(pen);
         p.drawEllipse(level->get_ball_x(), level->get_ball_y(), 5, 5);
 
-
-        ui->status->setGeometry(width()-(width()-level->get_grid_x()*level->get_brick_size_x()),
-                                0,width()-level->get_grid_x()*level->get_brick_size_x(),height());
+        ui->status->setGeometry(width()-(width()-level->get_grid_x()*br_size_x),
+                                0,width()-level->get_grid_x()*br_size_x,height());
     }
 
     if (pause) // пауза
@@ -254,7 +255,7 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
         p.drawText(10,50,"Выберите картинку для игры:");
         //draw = false;
     }
-
+    qDebug() << time.elapsed();
 
 }
 
@@ -341,7 +342,17 @@ void Widget::on_start_button_clicked()
 void Widget::mousePressEvent(QMouseEvent *m)
 {
     if (game_running && !pause)
-        level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-100);
+    {
+        if (m->x() - level->get_board_width()/2 < 0)
+            level->set_board_coord(level->get_board_width(), m->y()-100);
+        else if (m->x() + level->get_board_width()/2 > width()-ui->status->width())
+            level->set_board_coord(width()-ui->status->width() - level->get_board_width(), m->y()-100);
+        else
+            level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-100);
+        if (m->y()-100 > height()-level->get_board_height())
+            level->set_board_coord(level->get_board_x(),height()-level->get_board_height());
+
+    }
 
 
 
@@ -403,7 +414,18 @@ void Widget::mousePressEvent(QMouseEvent *m)
 void Widget::mouseMoveEvent(QMouseEvent *m)
 {
     if (game_running && !pause)
-        level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-100);
+    {
+        if (m->x() - level->get_board_width()/2 < 0)
+            level->set_board_coord(0, m->y()-100);
+        else if (m->x() + level->get_board_width()/2 > width()-ui->status->width())
+            level->set_board_coord(width()-ui->status->width() - level->get_board_width(), m->y()-100);
+        else
+            level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-100);
+
+        if (m->y()-100 > height()-level->get_board_height())
+            level->set_board_coord(level->get_board_x(),height()-level->get_board_height());
+
+    }
 }
 
 void Widget::on_menu_clicked() // в меню
@@ -579,9 +601,9 @@ void Widget::on_verticalSlider_valueChanged(int value)
 
     if (image_search)
     {
-        for (int i = pixmap_array.size(); i < (value+350)/50*5; i++)
+        for (int i = pixmap_array.size(); i < (value+350)/50*6; i++)
         {
-            if (i < images.size())
+            if (i >= pixmap_array.size() && i < images.size())
             {
                 pixmap_array.append(QPixmap(images.at(i)).scaled(width()/6,width()/6));
                 repaint();

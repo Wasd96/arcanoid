@@ -31,6 +31,7 @@ private:
     int hit_cooldown; // задержка удара
 
     QList <Brick> map; // карта
+    int** map_colliders;
 
 public:
     Level();

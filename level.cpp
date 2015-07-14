@@ -98,7 +98,7 @@ int Level::update(int width, int height)
         ball_angle = 360 + ball_angle;
     ball_angle = (int)ball_angle % 360;
 
-    ball_speed = height/400+(double)map.size()/450.0; // УБРАТЬ ПОСЛЕ НАСТРОЕК
+    ball_speed = height/200; // УБРАТЬ ПОСЛЕ НАСТРОЕК
 
 
     if (ball_x <= 0) // левая стенка
@@ -139,6 +139,9 @@ int Level::update(int width, int height)
     else k = 0;
     int hit = 0; // флаг столкновения
 
+    if ((int)(ball_x/brick_size_x) < grid_x && (int)(ball_y/brick_size_y) < grid_y)
+    if (map_colliders[(int)(ball_x/brick_size_x)][(int)(ball_y/brick_size_y)])
+    {
     for (int i = 0; i < map.size(); i++)
     {
         int brick_x = map[i].get_coord().x(); // координаты рассматриваемого кирпичика
@@ -204,7 +207,7 @@ int Level::update(int width, int height)
                 if (brick_size_x - fabs(ball_x-(map[i].get_coord().x()+brick_size_x/2)) > fabs(ball_x-ball_last_x)*2
                    && brick_size_y - fabs(ball_y-(map[i].get_coord().y()+brick_size_y/2)) > fabs(ball_y-ball_last_y)*2)
                 {
-                    if (hit == 0) // если убрать, то уничтожение всего вкл
+                    if (hit == 0) // если !=, то уничтожение всего вкл
                     {
                     map.takeAt(i);
                     break;
@@ -225,19 +228,22 @@ int Level::update(int width, int height)
             if (hit == 1)
             {
                 ball_angle = 360 - (180 + ball_angle);
+                map.takeAt(i);
+                map_colliders[(int)(ball_x/brick_size_x)][(int)(ball_y/brick_size_y)] = 0;
                 ball_x = ball_last_x;
                 ball_y = ball_last_y;
-                map.takeAt(i);
             }
             else if (hit == 2)
             {
                 ball_angle = -ball_angle;
+                map.takeAt(i);
+                map_colliders[(int)(ball_x/brick_size_x)][(int)(ball_y/brick_size_y)] = 0;
                 ball_x = ball_last_x;
                 ball_y = ball_last_y;
-                map.takeAt(i);
             }
 
         }
+    }
     }
 
 
@@ -274,7 +280,7 @@ int Level::update(int width, int height)
 
 int Level::load_map(QImage* img, int w, int h)
 {
-
+    //delete map_colliders;
     map.clear(); // очистка карты от остатков
 
     double ratio = (double)img->width()/(double)img->height(); // соотношение сторон
@@ -289,7 +295,7 @@ int Level::load_map(QImage* img, int w, int h)
     int wdiff = abs(w_use - brick_size_x*grid_x); // "просвет" между данными параметрами и стенкой
     int grid_max = 30; // максимальный размер сетки
     int grid_min = 8;
-    if (img->width() < 30)
+    if (img->width() < 50)
         grid_max = img->width();
     if (img->width() < 8)
         grid_min = img->width();
@@ -336,6 +342,8 @@ int Level::load_map(QImage* img, int w, int h)
         brick_size_y = brick_size_x/ratio;
     else
         brick_size_y = h/5*3/grid_y;
+    if (brick_size_y < 10)
+        brick_size_y = 10;
 
     int scale_x = img->width()/grid_x; // количество пикселей, сжимаемых в 1 кирпичик
     int scale_y = img->height()/grid_y;
@@ -402,5 +410,33 @@ int Level::load_map(QImage* img, int w, int h)
 
 
         }
+    map_colliders = new int*[grid_x];
+    for (int i = 0; i < grid_x; i++)
+        map_colliders[i] = new int[grid_y];
+
+    for (int i = 0; i < grid_x; i++)
+        for (int j = 0; j < grid_y; j++)
+            map_colliders[i][j] = 0;
+
+    for (int i = 0; i < grid_x; i++)
+    {
+        for (int j = 0; j < grid_y; j++)
+        {
+            for (int k = 0; k < map.size(); k++)
+            {
+                int brick_x = map[k].get_coord().x();
+                int brick_y = map[k].get_coord().y();
+                if (brick_x == brick_size_x*i && brick_y == brick_size_y*j)
+                {
+                    map_colliders[i][j] = 1;
+                    break;
+                }
+
+            }
+
+        }
+    }
+
+
     return map.size(); // возвращаем размер получившейся карты для статус бара
 }
