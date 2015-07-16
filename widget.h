@@ -4,6 +4,7 @@
 #include "level.h"
 
 #include <time.h>
+#include <QDataStream>
 #include <QWidget>
 #include <QPainter>
 #include <QPaintEvent>
@@ -36,7 +37,7 @@ public:
 
     void keyPressEvent(QKeyEvent *k);
 
-    void find_all_img(QString start_dir);
+    int find_all_img(QString start_dir, bool check);
 
 private slots:
 
@@ -52,6 +53,8 @@ private slots:
 
     void on_verticalSlider_valueChanged(int value);
 
+    void on_refresh_cache_clicked();
+
 private:
     Ui::Widget *ui; // Qt-шный виджет
 
@@ -64,7 +67,13 @@ private:
     bool pause; // пауза
     bool dir_search;
     bool image_search;
-    bool draw;
+
+    int bonus_width;
+    int bonus_explosive;
+    int bonus_super_ball;
+
+    QColor opacity_color;
+    QString opacity_text;
 
     QStringList dirs_with_img;
     QList <QPixmap> pixmap_array;
@@ -72,6 +81,9 @@ private:
     QList <QString> filter_list;
     QDir dir;
 
+    QStringList cache_dirs_with_img;
+    QList <QPixmap> cache_pixmap_array;
+    QList <QString> cache_img_time;
 
     QImage *img; // карта-картинка
 };

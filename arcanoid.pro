@@ -14,11 +14,13 @@ TEMPLATE = app
 SOURCES += main.cpp\
         widget.cpp\
         brick.cpp\
-        level.cpp
+        level.cpp \
+    ball.cpp
 
 HEADERS  += widget.h\
         brick.h\
-        level.h
+        level.h \
+    ball.h
 
 FORMS    += widget.ui
 

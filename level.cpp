@@ -10,13 +10,11 @@ Level::Level()
     board_y = 500;
     board_height = 20;
     board_width  = 100;
-    ball_x = 300;
-    ball_y = 800;
-    ball_speed = 1;
-    ball_angle = 90;
-    hit_cooldown = 0;
-    ball_last_x = ball_x;
-    ball_last_y = ball_y;
+    ball.append(Ball(300 , 800, 1, 90));
+    ball.last().set_last_x(ball.first().get_x());
+    ball.last().set_last_y(ball.first().get_y());
+    hit_cooldown.append(0);
+    explosive = false;
 }
 
 Level::Level(int w, int h, double angle)
@@ -27,15 +25,13 @@ Level::Level(int w, int h, double angle)
     board_y = 500;
     board_height = 20;
     board_width  = w/5;
-    ball_x = 300;
-    ball_y = 800;
-    ball_speed = 1.5;
-    ball_angle = angle;
     grid_x = 8;
     grid_y = 8;
-    hit_cooldown = 0;
-    ball_last_x = ball_x;
-    ball_last_y = ball_y;
+    hit_cooldown.append(0);
+    ball.append(Ball(300 , 800, 1, angle));
+    ball.last().set_last_x(ball.first().get_x());
+    ball.last().set_last_y(ball.first().get_y());
+    explosive = false;
 }
 
 void Level::set_brick_size(int w, int h)
@@ -56,32 +52,46 @@ void Level::set_board_coord(int x, int y)
     board_y = y;
 }
 
-void Level::set_ball_coord(double x, double y)
+void Level::set_ball_coord(double _x, double _y, int i)
 {
-    ball_x = x;
-    ball_y = y;
+    ball[i].set_x(_x);
+    ball[i].set_y(_y);
 }
 
-void Level::set_ball_angle(int angle)
+void Level::set_ball_angle(int _angle, int i)
 {
-    ball_angle = angle;
+    ball[i].set_angle(_angle);
 }
 
-
-bool Level::is_near(int number)
+int Level::nearest(int distance, int ball_id)
 {
+    double lenx;
+    double leny;
     for (int i = 0; i < map.size(); i++)
     {
-        if (i != number)
+        lenx = abs(ball[ball_id].get_x() - (map[i].get_coord().x() + brick_size_x/2));
+        leny = abs(ball[ball_id].get_y() - (map[i].get_coord().y() + brick_size_y/2));
+        if (sqrt(lenx*lenx + leny*leny) < distance)
         {
-            if (abs(ball_x - (map[i].get_coord().x() + brick_size_x/2)) < brick_size_x &&
-                abs(ball_y - (map[i].get_coord().y() + brick_size_y/2)) < brick_size_y)
-            {
-                return true;
-            }
+            return i;
         }
+
     }
-    return false;
+    return -1;
+}
+
+void Level::double_ball()
+{
+    int cur_ball_size = ball.size();
+    for (int i = 0; i < cur_ball_size; i++)
+    {
+        ball[i].set_angle(ball[i].get_angle()-45);
+        ball.append(Ball(ball[i].get_x(),
+                         ball[i].get_y(),
+                         ball[i].get_speed(),
+                         ball[i].get_angle()+90));
+        hit_cooldown.append(0);
+    }
 }
 
 
@@ -89,197 +99,224 @@ int Level::update(int width, int height)
 {
     double PI = 3.14159265;
 
-    board_width  = width/5;
-
     if (board_y < height/4*3)
         board_y = height/4*3;
 
-    if (ball_angle < 0) // приведение угла для подсчета
-        ball_angle = 360 + ball_angle;
-    ball_angle = (int)ball_angle % 360;
 
-    ball_speed = height/200; // УБРАТЬ ПОСЛЕ НАСТРОЕК
-
-
-    if (ball_x <= 0) // левая стенка
-    {
-        ball_angle = 180 - ball_angle + (rand()%3); // отражение + погрешность
-        ball_x = 1;
-    }
-    else if (ball_x >= width - (width - grid_x*brick_size_x)) // правая стенка
-    {
-        ball_angle = 180 - ball_angle + (rand()%2 - 1); // отражение + погрешность
-        ball_x = width - (width - grid_x*brick_size_x) - 1;
-    }
-    else if (ball_y <= 0) //верхняя стенка
-    {
-        ball_angle = -ball_angle + (rand()%2); // отражение + погрешность
-        ball_y = 1;
-    }
-    else if (ball_y >= height) // проигрыш (нижняя стенка)
-    {
-        return -1;
-    }
-
-
-    ball_last_x = ball_x; // старые координаты
-    ball_last_y = ball_y;
-    ball_x -= ball_speed * cos(ball_angle * PI / 180.0); // новые координаты
-    ball_y -= ball_speed * sin(ball_angle * PI / 180.0);
-
-    // столкновения с кубиками
-    double k = 0; // коэффициент для ур-ния прямой
-    double b = 0; // коэффициент для ур-ния прямой
-    double cross_y_left = 0;    // точка столкновения с левой гранью
-    double cross_y_right = 0;   // точка столкновения с правой гранью
-    double cross_x_bottom = 0;  // точка столкновения с нижней гранью
-    double cross_x_top = 0;     // точка столкновения с верхней гранью
-    if (((int)ball_angle%90) != 0) // если это не прямой угол
-        k = tan(ball_angle * PI / 180.0);
-    else k = 0;
     int hit = 0; // флаг столкновения
+    for (int i = 0; i < ball.size(); i++)
+    {
+        if (ball[i].get_angle() < 0) // приведение угла для подсчета
+            ball[i].set_angle(360 + ball[i].get_angle());
+        ball[i].set_angle((int)ball[i].get_angle() % 360);
 
-    if ((int)(ball_x/brick_size_x) < grid_x && (int)(ball_y/brick_size_y) < grid_y)
-    if (map_colliders[(int)(ball_x/brick_size_x)][(int)(ball_y/brick_size_y)])
-    {
-    for (int i = 0; i < map.size(); i++)
-    {
-        int brick_x = map[i].get_coord().x(); // координаты рассматриваемого кирпичика
-        int brick_y = map[i].get_coord().y();
-        if (ball_x >= brick_x
-                && ball_x <= brick_x+brick_size_x
-                && ball_y >= brick_y
-                && ball_y <= brick_y+brick_size_y) // если шарик внутри крипичика
+        ball[i].set_speed(height/200); // УБРАТЬ ПОСЛЕ НАСТРОЕК
+
+
+        if (ball[i].get_x() <= 0) // левая стенка
         {
-            b = ball_last_y - ((ball_y-ball_last_y)/(ball_x-ball_last_x))*ball_last_x;
-
-            cross_x_bottom = ((brick_y + brick_size_y) - b)/k; // точки пересечений с гранями
-            cross_x_top = (brick_y - b)/k;
-            cross_y_right = k*(brick_x + brick_size_x - ball_x) + ball_y;
-            cross_y_left = k*(brick_x - ball_x) + ball_y;
-
-            if ((int)ball_angle%90 != 0)
-            {
-                if (cross_x_bottom <= brick_x + brick_size_x
-                        && cross_x_bottom >= brick_x) // низ
-                {
-                    if (ball_angle > 0 && ball_angle < 90) // справа снизу
-                        if (cross_x_bottom <= ball_last_x && cross_x_bottom >= ball_x)
-                            hit = 2;
-                    if (ball_angle > 90 && ball_angle < 180) // слева снизу
-                        if (cross_x_bottom >= ball_last_x && cross_x_bottom <= ball_x)
-                            hit = 2;
-                }
-
-                if (cross_y_left <= brick_y + brick_size_y
-                        && cross_y_left >= brick_y) // лево
-                {
-                    if (ball_angle > 90 && ball_angle < 180) // слева снизу
-                        if (cross_y_left <= ball_last_y && cross_y_left >= ball_y)
-                            hit = 1;
-                    if (ball_angle > 180 && ball_angle < 270) // слева сверху
-                        if (cross_y_left >= ball_last_y && cross_y_left <= ball_y)
-                            hit = 1;
-                }
-
-                if (cross_y_right <= brick_y + brick_size_y
-                        && cross_y_right >= brick_y) // право
-                {
-                    if (ball_angle > 0 && ball_angle < 90) // справа снизу
-                        if (cross_y_right <= ball_last_y && cross_y_right >= ball_y)
-                            hit = 1;
-                    if (ball_angle > 270 && ball_angle < 360) // справа сверху
-                        if (cross_y_right >= ball_last_y && cross_y_right <= ball_y)
-                            hit = 1;
-                }
-                if (cross_x_top <= brick_x + brick_size_x
-                        && cross_x_top >= brick_x) // верх
-                {
-                    if (ball_angle > 270 && ball_angle < 360) // справа сверху
-                        if (cross_x_top <= ball_last_x && cross_x_top >= ball_x)
-                            hit = 2;
-                    if (ball_angle > 180 && ball_angle < 270) // слева сверху
-                        if (cross_x_top >= ball_last_x && cross_x_top <= ball_x)
-                            hit = 2;
-                }
-
-                // костыль для редкого, но неприятного бага
-                if (brick_size_x - fabs(ball_x-(map[i].get_coord().x()+brick_size_x/2)) > fabs(ball_x-ball_last_x)*2
-                   && brick_size_y - fabs(ball_y-(map[i].get_coord().y()+brick_size_y/2)) > fabs(ball_y-ball_last_y)*2)
-                {
-                    if (hit == 0) // если !=, то уничтожение всего вкл
-                    {
-                    map.takeAt(i);
-                    break;
-                    }
-                }
-
-
-            }
-
+            ball[i].set_angle(180 - ball[i].get_angle() + (rand()%3)); // отражение + погрешность
+            ball[i].set_x(1);
+        }
+        else if (ball[i].get_x() >= width - (width - grid_x*brick_size_x)) // правая стенка
+        {
+            ball[i].set_angle(180 - ball[i].get_angle() + (rand()%2 - 1)); // отражение + погрешность
+            ball[i].set_x(width - (width - grid_x*brick_size_x) - 1);
+        }
+        else if (ball[i].get_y() <= 0) //верхняя стенка
+        {
+            ball[i].set_angle(-ball[i].get_angle() + (rand()%2)); // отражение + погрешность
+            ball[i].set_y(1);
+        }
+        else if (ball[i].get_y() >= height) // проигрыш (нижняя стенка)
+        {
+            if (ball.size() == 1)
+                return -1;
             else
             {
-                if (ball_angle == 0 || ball_angle == 180)
-                    hit = 1;
-                else if (ball_angle == 90 || ball_angle == 270)
-                    hit = 2;
+                ball.takeAt(i);
+                return -2;
             }
-
-            if (hit == 1)
-            {
-                ball_angle = 360 - (180 + ball_angle);
-                map.takeAt(i);
-                map_colliders[(int)(ball_x/brick_size_x)][(int)(ball_y/brick_size_y)] = 0;
-                ball_x = ball_last_x;
-                ball_y = ball_last_y;
-            }
-            else if (hit == 2)
-            {
-                ball_angle = -ball_angle;
-                map.takeAt(i);
-                map_colliders[(int)(ball_x/brick_size_x)][(int)(ball_y/brick_size_y)] = 0;
-                ball_x = ball_last_x;
-                ball_y = ball_last_y;
-            }
-
         }
-    }
-    }
 
 
-    // столкновение с доской
-    double dx = ball_x - (board_x + board_width/2); // растояние от шарика до центра доски
-    double dy = ball_y - (board_y + board_height/2);
-    if (hit_cooldown == 0) // если отражение возможно
-    {
-        if (abs(dx) < board_width/2 && abs(dy) < board_height/2) // столкновение
+        ball[i].set_last_x(ball[i].get_x()); // старые координаты
+        ball[i].set_last_y(ball[i].get_y());
+        ball[i].set_x(ball[i].get_x() - ball[i].get_speed() * cos(ball[i].get_angle() * PI / 180.0)); // новые координаты
+        ball[i].set_y(ball[i].get_y() - ball[i].get_speed() * sin(ball[i].get_angle() * PI / 180.0));
+
+        // столкновения с кубиками
+        double k = 0; // коэффициент для ур-ния прямой
+        double b = 0; // коэффициент для ур-ния прямой
+        double cross_y_left = 0;    // точка столкновения с левой гранью
+        double cross_y_right = 0;   // точка столкновения с правой гранью
+        double cross_x_bottom = 0;  // точка столкновения с нижней гранью
+        double cross_x_top = 0;     // точка столкновения с верхней гранью
+        if (((int)ball[i].get_angle()%90) != 0) // если это не прямой угол
+            k = tan(ball[i].get_angle() * PI / 180.0);
+        else k = 0;
+
+        if ((int)(ball[i].get_x()/brick_size_x) < grid_x && (int)(ball[i].get_y()/brick_size_y) < grid_y)
+        if (map_colliders[(int)(ball[i].get_x()/brick_size_x)][(int)(ball[i].get_y()/brick_size_y)])
         {
-            ball_x = ball_last_x; // возврат позиции
-            ball_y = ball_last_y; // шарика
-            ball_angle = -ball_angle; // отражение
-            ball_angle += dx/board_width*100; // доп угол отражения
+            for (int j = 0; j < map.size(); j++)
+            {
+                int brick_x = map[j].get_coord().x(); // координаты рассматриваемого кирпичика
+                int brick_y = map[j].get_coord().y();
+                if (ball[i].get_x()>= brick_x
+                        && ball[i].get_x()<= brick_x+brick_size_x
+                        && ball[i].get_y()>= brick_y
+                        && ball[i].get_y()<= brick_y+brick_size_y) // если шарик внутри крипичика
+                {
+                    b = ball[i].get_last_y() - ((ball[i].get_y() - ball[i].get_last_y())/(ball[i].get_x() - ball[i].get_last_x()))*ball[i].get_last_x();
 
-            if (ball_angle < 0) // приведение угла для подсчета
-                ball_angle = 360 + ball_angle;
-            ball_angle = (int)ball_angle % 360;
+                    cross_x_bottom = ((brick_y + brick_size_y) - b)/k; // точки пересечений с гранями
+                    cross_x_top = (brick_y - b)/k;
+                    cross_y_right = k*(brick_x + brick_size_x - ball[i].get_x()) + ball[i].get_y();
+                    cross_y_left = k*(brick_x - ball[i].get_x()) + ball[i].get_y();
 
-            if (ball_angle < 10) // поправки
-                ball_angle = 10;
-            else if (ball_angle > 170)
-                ball_angle = 170;
-            hit_cooldown = 100; // задержка перед следующим отражением
+                    if ((int)ball[i].get_angle()%90 != 0)
+                    {
+                        if (cross_x_bottom <= brick_x + brick_size_x
+                                && cross_x_bottom >= brick_x) // низ
+                        {
+                            if (ball[i].get_angle() > 0 && ball[i].get_angle() < 90) // справа снизу
+                                if (cross_x_bottom <= ball[i].get_last_x() && cross_x_bottom >= ball[i].get_x())
+                                    hit = 2;
+                            if (ball[i].get_angle() > 90 && ball[i].get_angle() < 180) // слева снизу
+                                if (cross_x_bottom >= ball[i].get_last_x() && cross_x_bottom <= ball[i].get_x())
+                                    hit = 2;
+                        }
+
+                        if (cross_y_left <= brick_y + brick_size_y
+                                && cross_y_left >= brick_y) // лево
+                        {
+                            if (ball[i].get_angle() > 90 && ball[i].get_angle() < 180) // слева снизу
+                                if (cross_y_left <= ball[i].get_last_y() && cross_y_left >= ball[i].get_y())
+                                    hit = 1;
+                            if (ball[i].get_angle() > 180 && ball[i].get_angle() < 270) // слева сверху
+                                if (cross_y_left >= ball[i].get_last_y() && cross_y_left <= ball[i].get_y())
+                                    hit = 1;
+                        }
+
+                        if (cross_y_right <= brick_y + brick_size_y
+                                && cross_y_right >= brick_y) // право
+                        {
+                            if (ball[i].get_angle() > 0 && ball[i].get_angle() < 90) // справа снизу
+                                if (cross_y_right <= ball[i].get_last_y() && cross_y_right >= ball[i].get_y())
+                                    hit = 1;
+                            if (ball[i].get_angle() > 270 && ball[i].get_angle() < 360) // справа сверху
+                                if (cross_y_right >= ball[i].get_last_y() && cross_y_right <= ball[i].get_y())
+                                    hit = 1;
+                        }
+                        if (cross_x_top <= brick_x + brick_size_x
+                                && cross_x_top >= brick_x) // верх
+                        {
+                            if (ball[i].get_angle() > 270 && ball[i].get_angle() < 360) // справа сверху
+                                if (cross_x_top <= ball[i].get_last_x() && cross_x_top >= ball[i].get_x())
+                                    hit = 2;
+                            if (ball[i].get_angle() > 180 && ball[i].get_angle() < 270) // слева сверху
+                                if (cross_x_top >= ball[i].get_last_x() && cross_x_top <= ball[i].get_x())
+                                    hit = 2;
+                        }
+
+                        // костыль для редкого, но неприятного бага
+                        if (brick_size_x - fabs(ball[i].get_x() - (map[j].get_coord().x()+brick_size_x/2)) > fabs(ball[i].get_x() - ball[i].get_last_x())*2
+                           && brick_size_y - fabs(ball[i].get_y() - (map[j].get_coord().y()+brick_size_y/2)) > fabs(ball[i].get_y() - ball[i].get_last_y())*2)
+                        {
+                            if (hit == 0 || super_ball) // если !=, то уничтожение всего вкл
+                            {
+                                map.takeAt(j);
+                                break;
+                            }
+                        }
+
+
+                    }
+
+                    else
+                    {
+                        if (ball[i].get_angle() == 0 || ball[i].get_angle() == 180)
+                            hit = 1;
+                        else if (ball[i].get_angle() == 90 || ball[i].get_angle() == 270)
+                            hit = 2;
+                    }
+
+                    if (hit)
+                    {
+                        if (hit == 1)
+                            ball[i].set_angle(360 - (180 + ball[i].get_angle()));
+                        if (hit == 2)
+                            ball[i].set_angle(-ball[i].get_angle());
+
+                        if (!explosive)
+                            map.takeAt(j);
+                        else
+                        {
+                            int near = nearest(sqrt(brick_size_x*brick_size_x+brick_size_y*brick_size_y), i);
+                            while(near != -1)
+                            {
+                                map.takeAt(near);
+                                near = nearest(sqrt(brick_size_x*brick_size_x+brick_size_y*brick_size_y), i);
+                            }
+                        }
+                        map_colliders[(int)(ball[i].get_x()/brick_size_x)][(int)(ball[i].get_y()/brick_size_y)] = 0;
+                        ball[i].set_x(ball[i].get_last_x());
+                        ball[i].set_y(ball[i].get_last_y());
+                    }
+
+                }
+            }
         }
-    }
-    hit_cooldown -= ball_speed;
-    if (hit_cooldown < 0)
-        hit_cooldown = 0;
 
-    return map.size();
+
+        // столкновение с доской
+        double dx = ball[i].get_x() - (board_x + board_width/2); // растояние от шарика до центра доски
+        double dy = ball[i].get_y() - (board_y + board_height/2);
+        if (hit_cooldown.at(i) == 0) // если отражение возможно
+        {
+            if (abs(dx) < board_width/2 && abs(dy) < board_height/2) // столкновение
+            {
+                ball[i].set_x(ball[i].get_last_x()); // возврат позиции
+                ball[i].set_y(ball[i].get_last_y()); // шарика
+                ball[i].set_angle(-ball[i].get_angle()); // отражение
+                ball[i].set_angle(ball[i].get_angle() + dx/board_width*100); // доп угол отражения
+
+                if (ball[i].get_angle() < 0) // приведение угла для подсчета
+                    ball[i].set_angle(360 + ball[i].get_angle());
+                ball[i].set_angle((int)ball[i].get_angle() % 360);
+
+                if (ball[i].get_angle() < 10) // поправки
+                    ball[i].set_angle(10);
+                else if (ball[i].get_angle() > 170)
+                    ball[i].set_angle(170);
+                hit_cooldown[i] = 100; // задержка перед следующим отражением
+            }
+        }
+
+        hit_cooldown[i] -= ball[i].get_speed();
+        if (hit_cooldown.at(i) < 0)
+            hit_cooldown[i] = 0;
+
+    }
+
+
+
+    if (hit)
+        return map.size();
+
+    return -2;
 }
 
 
 int Level::load_map(QImage* img, int w, int h)
 {
+
+    board_width = w/5;
+
+    while(ball.size()-1 > 0)
+        ball.takeLast();
+
     //delete map_colliders;
     map.clear(); // очистка карты от остатков
 

@@ -284,7 +284,10 @@ margin-top: 1px;
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">QSlider::groove:vertical  {
+    <string notr="true">QSlider {
+background: rgba(0,0,0,0);
+}
+QSlider::groove:vertical  {
     /*border: 1px solid blue;*/
     width: 3px;
     background:gray;
@@ -317,6 +320,19 @@ QSlider::handle:pressed  {
    </property>
    <property name="invertedControls">
     <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="refresh_cache">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>490</y>
+     <width>101</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>refresh cache</string>
    </property>
   </widget>
  </widget>

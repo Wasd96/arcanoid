@@ -7,6 +7,7 @@
 #include <QRgb>
 
 #include "brick.h"
+#include "ball.h"
 
 class Level
 {
@@ -21,37 +22,41 @@ private:
     int board_height;
     int board_width;
 
-    double ball_x; // параметры шарика
-    double ball_y;
-    double ball_last_x; // костыль для системы отражений
-    double ball_last_y; // содержит предыдущюю позицию шарика
-    double ball_speed; // скорость
-    double ball_angle; // угол движения
+    QList <Ball> ball; // список шариков
 
-    int hit_cooldown; // задержка удара
+    QList <int> hit_cooldown; // задержка удара
 
     QList <Brick> map; // карта
     int** map_colliders;
+
+    bool explosive; // бонусы
+    bool super_ball;
 
 public:
     Level();
     Level(int w, int h, double angle);
 
     int load_map(QImage* img, int w, int h); // создать карту
-    bool is_near(int number); // есть ли рядом блоки
+    int nearest(int distance, int ball_id); // есть ли рядом блоки
 
     void set_brick_size(int w, int h);
     void set_grid(int x, int y); // установить размеры сетки
     void set_board_coord(int x, int y);
-    void set_ball_coord(double x, double y);
-    void set_ball_angle(int angle);
+    void set_ball_coord(double _x, double _y, int i);
+    void set_ball_angle(int _angle, int i);
+    void set_board_width(int width) { board_width = width; }
+    void set_explosive(bool exp) { explosive = exp; }
+    void set_super_ball(bool sb) { super_ball = sb; }
+
+    void double_ball();
+
     int update(int width, int height); // итерация игрового мира
 
+    double get_ball_x(int i) { return ball[i].get_x(); }
+    double get_ball_y(int i) { return ball[i].get_y(); }
+    double get_ball_speed(int i) { return ball[i].get_speed(); }
+    double get_ball_angle(int i) { return ball[i].get_angle(); }
 
-    double get_ball_x() { return ball_x; }
-    double get_ball_y() { return ball_y; }
-    double get_ball_speed() { return ball_speed; }
-    double get_ball_angle() { return ball_angle; }
     int get_board_x() { return board_x; }
     int get_board_y() { return board_y; }
     int get_board_width() { return board_width; }
@@ -61,6 +66,9 @@ public:
     int get_grid_x() { return grid_x; }
     int get_grid_y() { return grid_y; }
     int get_map_size() { return map.size(); }
+    int get_ball_counter() { return ball.size(); }
+    bool get_explosive() { return explosive; }
+    bool get_super_ball() { return super_ball; }
     QPoint get_brick_coord(int i) { return map[i].get_coord(); }
     QColor get_brick_color(int i) { return map[i].get_color(); }
 };
