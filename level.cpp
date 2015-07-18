@@ -15,6 +15,7 @@ Level::Level()
     ball.last().set_last_y(ball.first().get_y());
     hit_cooldown.append(0);
     explosive = false;
+    super_ball = false;
 }
 
 Level::Level(int w, int h, double angle)
@@ -32,6 +33,7 @@ Level::Level(int w, int h, double angle)
     ball.last().set_last_x(ball.first().get_x());
     ball.last().set_last_y(ball.first().get_y());
     explosive = false;
+    super_ball = false;
 }
 
 void Level::set_brick_size(int w, int h)
@@ -94,13 +96,77 @@ void Level::double_ball()
     }
 }
 
+void Level::update_img(QImage *image_brick)
+{
+    image_brick->fill(Qt::black);
+    int i;
+    int j;
+    int k;
+    int brick_x;
+    int brick_y;
+    int br_size_x = brick_size_x;
+    int br_size_y = brick_size_y;
+    QRgb color;
+    for (i = 0; i < map.size(); i++)
+    {
+        brick_x = get_brick_coord(i).x();
+        brick_y = get_brick_coord(i).y();
+        color = get_brick_color(i).rgb();
+        for (j = brick_x; j <= brick_x + br_size_x; j++)
+        {
+            for (k = brick_y; k <= brick_y + br_size_y; k++)
+            {
+                image_brick->setPixel(j,k,color);
+                if (j == brick_x
+                        || k == brick_y
+                        || j == brick_x + br_size_x
+                        || k == brick_y + br_size_y)
+                    image_brick->setPixel(j,k,QColor(150,150,150).rgb());
+            }
+        }
 
-int Level::update(int width, int height)
+    }
+}
+
+int Level::update(int width, int height, QImage *image_brick)
 {
     double PI = 3.14159265;
 
     if (board_y < height/4*3)
         board_y = height/4*3;
+
+    if (image_brick->pixel(0,0) == QColor(0,0,1).rgb())
+    {
+        image_brick->fill(Qt::black);
+        int i;
+        int j;
+        int k;
+        int brick_x;
+        int brick_y;
+        int br_size_x = brick_size_x;
+        int br_size_y = brick_size_y;
+        QRgb color;
+        for (i = 0; i < map.size(); i++)
+        {
+            brick_x = get_brick_coord(i).x();
+            brick_y = get_brick_coord(i).y();
+            color = get_brick_color(i).rgb();
+            for (j = brick_x; j <= brick_x + br_size_x; j++)
+            {
+                for (k = brick_y; k <= brick_y + br_size_y; k++)
+                {
+                    image_brick->setPixel(j,k,color);
+                    if (j == brick_x
+                            || k == brick_y
+                            || j == brick_x + br_size_x
+                            || k == brick_y + br_size_y)
+                        image_brick->setPixel(j,k,QColor(150,150,150).rgb());
+                }
+            }
+
+        }
+
+    }
 
 
     int hit = 0; // флаг столкновения
@@ -224,10 +290,9 @@ int Level::update(int width, int height)
                         if (brick_size_x - fabs(ball[i].get_x() - (map[j].get_coord().x()+brick_size_x/2)) > fabs(ball[i].get_x() - ball[i].get_last_x())*2
                            && brick_size_y - fabs(ball[i].get_y() - (map[j].get_coord().y()+brick_size_y/2)) > fabs(ball[i].get_y() - ball[i].get_last_y())*2)
                         {
-                            if (hit == 0 || super_ball) // если !=, то уничтожение всего вкл
+                            if (hit == 0)
                             {
                                 map.takeAt(j);
-                                break;
                             }
                         }
 
@@ -242,7 +307,14 @@ int Level::update(int width, int height)
                             hit = 2;
                     }
 
-                    if (hit)
+                    if (super_ball)
+                    {
+                        map.takeAt(j);
+                        update_img(image_brick);
+                        return map.size();
+                    }
+
+                    else if (hit)
                     {
                         if (hit == 1)
                             ball[i].set_angle(360 - (180 + ball[i].get_angle()));
@@ -300,10 +372,11 @@ int Level::update(int width, int height)
 
     }
 
-
-
     if (hit)
+    {
+        update_img(image_brick);
         return map.size();
+    }
 
     return -2;
 }
@@ -312,12 +385,11 @@ int Level::update(int width, int height)
 int Level::load_map(QImage* img, int w, int h)
 {
 
-    board_width = w/5;
+    board_width = w/6;
 
     while(ball.size()-1 > 0)
         ball.takeLast();
 
-    //delete map_colliders;
     map.clear(); // очистка карты от остатков
 
     double ratio = (double)img->width()/(double)img->height(); // соотношение сторон
@@ -473,7 +545,6 @@ int Level::load_map(QImage* img, int w, int h)
 
         }
     }
-
 
     return map.size(); // возвращаем размер получившейся карты для статус бара
 }

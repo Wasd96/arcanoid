@@ -50,7 +50,8 @@ public:
 
     void double_ball();
 
-    int update(int width, int height); // итерация игрового мира
+    int update(int width, int height, QImage *image_brick); // итерация игрового мира
+    void update_img(QImage *image_brick);
 
     double get_ball_x(int i) { return ball[i].get_x(); }
     double get_ball_y(int i) { return ball[i].get_y(); }

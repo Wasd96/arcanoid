@@ -23,6 +23,8 @@ Widget::Widget(QWidget *parent) :
     pause = false;
     dir_search = false;
     image_search = false;
+    settings = false;
+    first_time = false;
     opacity_color.setAlpha(0);
 
     ui->menu->setVisible(false);
@@ -33,6 +35,8 @@ Widget::Widget(QWidget *parent) :
     ui->refresh_cache->setEnabled(false);
     ui->status->setGeometry(width(),-100,10,10);
     ui->verticalSlider->setGeometry(width()-width()/10,100,width()/10,height()-200);
+    ui->refresh_cache->setGeometry(width()/2 - ui->refresh_cache->width()/2,
+                                   height()/7*2, width()/2, height()/10);
 
     filter_list.append("*.jpg");
     filter_list.append("*.png");
@@ -43,12 +47,17 @@ Widget::Widget(QWidget *parent) :
     if (file.size() == 0)
     {
         if(file.open(QIODevice::WriteOnly))
+        {
             qDebug() << "File Has Been Created / Already exist";
+        }
         else
             qDebug() << "Failed to Create File";
     }
     file.close();
     file.open(QIODevice::ReadOnly);
+
+    if (file.size() == 0)
+        first_time = true;
 
     QString string;
     QPixmap pixmap;
@@ -56,7 +65,6 @@ Widget::Widget(QWidget *parent) :
     if (file.isOpen())
     {
         QDataStream stream(&file);
-
         do
         {
             stream >> string >> time >> pixmap;
@@ -68,11 +76,21 @@ Widget::Widget(QWidget *parent) :
             }
             qDebug() << string << time;
         } while(string != "");
-
-        qDebug() << file.fileName();
+    qDebug() << file.fileName();
     file.close();
     }
 
+#ifdef Q_OS_WIN
+    setMouseTracking(true);
+    setWindowIcon(QIcon(":/new/prefix1/icon.png"));
+    setWindowTitle("Image Destroyer");
+#endif
+
+    image_brick = new QImage(5,5,QImage::Format_RGB16);
+
+
+    if (first_time)
+        on_about_button_clicked();
 
 }
 
@@ -111,19 +129,25 @@ void Widget::timerEvent(QTimerEvent *t)
     {
         if (game_running && !pause)
         {
-            int state = level->update(width(), height()); // состояние игрового мира
+            int state = level->update(width(), height(), image_brick); // состояние игрового мира
             /*if (state > -2)
                 qDebug() << state;*/
             if (state == -1) // проигрыш
             {
                 game_over = true;
                 game_running = false;
+                level->set_board_width(level->get_board_width()/2);
+                level->set_super_ball(false);
+                level->set_explosive(false);
             }
             else if (state == 0) // победа
             {
                 ui->status->setValue(ui->status->maximum() - state);
                 game_win = true;
                 game_running = false;
+                level->set_board_width(level->get_board_width()/2);
+                level->set_super_ball(false);
+                level->set_explosive(false);
             }
             else if (state > 0)
             {
@@ -158,20 +182,21 @@ void Widget::timerEvent(QTimerEvent *t)
                     {
 
                         {
-                            bonus_explosive = startTimer(6000);
+                            bonus_explosive = startTimer(8000);
                             level->set_explosive(true);
                             level->set_super_ball(false);
-                            opacity_text = "Взрывчатка";
+                            opacity_text = "Взрывной";
+                            opacity_color.setRgb(255,50,50,255);
                         }
                     }
                     else if (item%42 == 0)
                     {
 
                         {
-                            bonus_super_ball = startTimer(2000);
+                            bonus_super_ball = startTimer(4000);
                             level->set_explosive(false);
                             level->set_super_ball(true);
-                            opacity_text = "SUPER BALL";
+                            opacity_text = "Пробивной";
                             opacity_color.setRgb(250,50,150,255);
                         }
                     }
@@ -201,11 +226,6 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
     QBrush brush;
     QFont font;
 
-    /*QPixmap mp(":/new/prefix1/Bez_imeni1.png");
-    qDebug() << mp.size();
-    p.drawPixmap(0,0,mp);*/
-
-
     // отрисовка элементов
     if (!game_running)
     {
@@ -219,23 +239,27 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
                                       height()/7*6, width()/3, height()/10);
     }
 
+#ifdef Q_OS_WIN
+    if (game_running && !pause)
+    {
+        QCursor curs;
+        curs.setShape(Qt::BlankCursor);
+        setCursor(curs);
+    }
+    else
+    {
+        QCursor curs;
+        curs.setShape(Qt::ArrowCursor);
+        setCursor(curs);
+    }
+#endif
+
     if (game_running || game_over || game_win)
     {
-        // отрисовка уровня
-        p.fillRect(0,height()/2,width(),height(),Qt::black);
         int br_size_x = level->get_brick_size_x();
-        int br_size_y = level->get_brick_size_y();
-        QRect rect;
-        pen.setColor(Qt::gray);
-        p.setPen(pen);
-        for (int i = 0; i < level->get_map_size(); i++)
-        {
-            rect.setTopLeft(QPoint(level->get_brick_coord(i).x(),level->get_brick_coord(i).y()));
-            rect.setWidth(br_size_x);
-            rect.setHeight(br_size_y);
-            p.fillRect(rect,QColor(level->get_brick_color(i))); // рисуем кирпичик
-            p.drawRect(rect); // рисуем контур
-        }
+
+        // отрисовка уровня
+        p.drawImage(0,0,*image_brick);
 
         // отрисовка доски
         pen.setColor(Qt::yellow);
@@ -391,6 +415,46 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
         p.drawText(10,50,"Выберите картинку для игры:");
 
     }
+
+    if (settings)
+    {
+        pen.setColor(Qt::white);
+        p.setPen(pen);
+        font.setPixelSize(20);
+        p.setFont(font);
+        QRect rect;
+        rect.setCoords(20, 40, width()-20, height());
+#ifdef Q_OS_WIN // кроссплатформенность
+        QString str("На наличие картинок "
+                    "сканируется только папка C:/Users/ ради экономии "
+                    "времени и пропуска системных картинок. Если Вы хотите "
+                    "сыграть в картинку, лежащую в другом месте, то скопируйте "
+                    "ее на рабочий стол или в любую папку внутри C:/Users/"
+                    "\n\nКэш нужен для быстрой загрузки без лишнего поиска. Если вы добавили новую папку, "
+                    "то необходимо нажать на кнопку ниже."
+                    "\n\nСтоит учесть, что пропускаются папки с названиями cache, docs, lib, "
+                    "plugin, build, data, help, src. Зачастую в этих папках содержатся ненужные "
+                    "или неинтересные картинки.");
+#else
+        QString str("На наличие картинок сканируются память телефона и карты памяти. "
+                    "\n\nКэш нужен для быстрой загрузки без лишнего поиска. Если вы добавили новую папку, "
+                    "то необходимо нажать на кнопку ниже."
+                    "\n\nСтоит учесть, что пропускаются папки с названиями cache, docs, lib, "
+                    "plugin, build, data, help, src. Зачастую в этих папках содержатся ненужные "
+                    "или неинтересные картинки.");
+#endif
+
+        p.drawText(rect, str);
+
+        str = "Приятной игры!";
+        font.setPixelSize(40);
+        p.setFont(font);
+        pen.setColor(QColor(92,154,204));
+        p.setPen(pen);
+        p.drawText(width()/2-str.length()*font.pixelSize()/4, height()/9*7, str);
+    }
+
+
     //qDebug() << time.elapsed();
 
 }
@@ -580,6 +644,7 @@ void Widget::mousePressEvent(QMouseEvent *m)
                     && m->y() >= 120+i/5*(width()/6+5) - shift
                     && m->y() <= 120+i/5*(width()/6+5) + width()/6 - shift)
             {
+
                 dir_search = false;
                 image_search = false;
                 qDebug() << "choosed" << i;
@@ -587,6 +652,11 @@ void Widget::mousePressEvent(QMouseEvent *m)
                 pixmap_array.clear();
                 images.clear();
                 ui->status->setMaximum(level->load_map(img, width(), height())); // загрузка текущего уровня
+                QImage *temp_img = new QImage(level->get_grid_x()*level->get_brick_size_x()+1,
+                                              level->get_grid_y()*level->get_brick_size_y()+1,
+                                              QImage::Format_RGB16);
+                image_brick = temp_img;
+                level->update_img(image_brick);
                 level->set_ball_coord(width()/2-level->get_board_width()/2, height()/5*4 - 5, 0);
                 level->set_ball_angle(55+rand()%70, 0);
                 level->set_board_coord(width()/2-width()/5, height()/5*4);  // начальные координат доски
@@ -602,16 +672,21 @@ void Widget::mousePressEvent(QMouseEvent *m)
 
 void Widget::mouseMoveEvent(QMouseEvent *m)
 {
+#ifdef Q_OS_WIN // кроссплатформенность
+int add_y = 0;
+#else
+int add_y = 100;
+#endif
     if (game_running && !pause)
     {
         if (m->x() - level->get_board_width()/2 < 0)
-            level->set_board_coord(0, m->y()-100);
+            level->set_board_coord(0, m->y()-add_y);
         else if (m->x() + level->get_board_width()/2 > width()-ui->status->width())
-            level->set_board_coord(width()-ui->status->width() - level->get_board_width(), m->y()-100);
+            level->set_board_coord(width()-ui->status->width() - level->get_board_width(), m->y()-add_y);
         else
-            level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-100);
+            level->set_board_coord(m->x()-level->get_board_width()/2, m->y()-add_y);
 
-        if (m->y()-100 > height()-level->get_board_height())
+        if (m->y()-add_y > height()-level->get_board_height())
             level->set_board_coord(level->get_board_x(),height()-level->get_board_height());
 
     }
@@ -631,6 +706,8 @@ void Widget::on_menu_clicked() // в меню
     game_over = false;
     game_win = false;
     game_running = false;
+    pause = false;
+    settings = false;
     menu_change_state(true);
 }
 
@@ -645,7 +722,21 @@ void Widget::on_about_button_clicked()
     ui->about->setEnabled(true);
     ui->about->setVisible(true);
     ui->about->setGeometry(width()/20, height()/20, width()/20*18, height()/20*14);
-    ui->about->setText("Это текст. \n с переносом.");
+    ui->about->setText("\tДобро пожаловать!\n\n"
+                       "Перед Вами игра по типу \"Арканоид\"."
+                       "\nОна создана ради пробы своих сил "
+                       "и просто удовольствия.\n"
+                       "Особенность заключается в том, "
+                       "что игроку не нужно проходить заготовленные одинаковые уровни - для игры нужно "
+                       "просто выбрать любую картинку. (Прозрачность в *.png учитывается)\n\n"
+                       "Код игры писал я, Волков Александр, но она бы не увидела свет без некоторых людей.\n"
+                       "Объявляю благодарности:\n"
+                       "Дмитрию С. - за идею;\n"
+                       "Полине О. - за помощь;\n"
+                       "Андрею О. - за поддержку.\n\n"
+                       "При большом желании со мной можно связаться в вк - vk.com/just_another_member , "
+                       "или пишите на e-mail - wasd3680@yandex.ru\n\nРепозиторий проекта на гитхабе "
+                       "доступен всем желающим и может быть найден по адресу https://github.com/Wasd96/arcanoid");
 
     ui->menu->setGeometry(0, height()-height()/10, width()/4, height()/10);
     ui->menu->setVisible(true);
@@ -655,16 +746,21 @@ void Widget::on_about_button_clicked()
 void Widget::on_settings_button_clicked()
 {
     menu_change_state(false);
+    settings = true;
     ui->status->setVisible(false);
     ui->verticalSlider->setVisible(false);
     ui->verticalSlider->setEnabled(false);
     ui->refresh_cache->setVisible(true);
     ui->refresh_cache->setEnabled(true);
+    ui->refresh_cache->setGeometry(width()/2 - ui->refresh_cache->width()/2,
+                                   height()/7*4, width()/2, height()/10);
+
 
 
     ui->menu->setGeometry(0, height()-height()/10, width()/4, height()/10);
     ui->menu->setVisible(true);
     ui->menu->setEnabled(true);
+    repaint();
 }
 
 void Widget::keyPressEvent(QKeyEvent *k)
@@ -713,6 +809,17 @@ void Widget::keyPressEvent(QKeyEvent *k)
     }
 #endif
 
+    if (pause)
+    {
+        ui->menu->setGeometry(0, height()-height()/10, width()/4, height()/10);
+        ui->menu->setVisible(true);
+        ui->menu->setEnabled(true);
+    }
+    if (!pause && game_running)
+    {
+        ui->menu->setVisible(false);
+        ui->menu->setEnabled(false);
+    }
     repaint();
 }
 
@@ -763,7 +870,8 @@ int Widget::find_all_img(QString start_dir, bool check)
                         || dir_list.at(i) == "help"
                         || dir_list.at(i).contains("build")
                         || dir_list.at(i).contains("plugin")
-                        || dir_list.at(i) == "features")
+                        || dir_list.at(i) == "features"
+                        || dir_list.at(i) == "src")
                     continue;
                 find_all_img(start_dir + "/" + dir_list.at(i), 1);
             }

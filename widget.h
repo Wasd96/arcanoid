@@ -67,6 +67,8 @@ private:
     bool pause; // пауза
     bool dir_search;
     bool image_search;
+    bool settings;
+    bool first_time;
 
     int bonus_width;
     int bonus_explosive;
@@ -85,7 +87,8 @@ private:
     QList <QPixmap> cache_pixmap_array;
     QList <QString> cache_img_time;
 
-    QImage *img; // карта-картинка
+    QImage *img; // картинка
+    QImage *image_brick;
 };
 
 #endif // WIDGET_H
