@@ -16,6 +16,7 @@ Level::Level()
     hit_cooldown.append(0);
     explosive = false;
     super_ball = false;
+    bonus_width = false;
 }
 
 Level::Level(int w, int h, double angle)
@@ -34,6 +35,7 @@ Level::Level(int w, int h, double angle)
     ball.last().set_last_y(ball.first().get_y());
     explosive = false;
     super_ball = false;
+    bonus_width = false;
 }
 
 void Level::set_brick_size(int w, int h)
@@ -98,6 +100,9 @@ void Level::double_ball()
 
 void Level::update_img(QImage *image_brick)
 {
+    QTime imgupd;
+    imgupd.start();
+
     image_brick->fill(Qt::black);
     int i;
     int j;
@@ -107,7 +112,9 @@ void Level::update_img(QImage *image_brick)
     int br_size_x = brick_size_x;
     int br_size_y = brick_size_y;
     QRgb color;
-    for (i = 0; i < map.size(); i++)
+    QRgb color_border = QColor(150,150,150).rgb();
+    int m_size = map.size();
+    for (i = 0; i < m_size; i++)
     {
         brick_x = get_brick_coord(i).x();
         brick_y = get_brick_coord(i).y();
@@ -116,55 +123,28 @@ void Level::update_img(QImage *image_brick)
         {
             for (k = brick_y; k <= brick_y + br_size_y; k++)
             {
+
                 image_brick->setPixel(j,k,color);
                 if (j == brick_x
                         || k == brick_y
                         || j == brick_x + br_size_x
                         || k == brick_y + br_size_y)
-                    image_brick->setPixel(j,k,QColor(150,150,150).rgb());
+                    image_brick->setPixel(j,k,color_border);
             }
         }
 
     }
+
+    qDebug() << imgupd.elapsed();
 }
 
 int Level::update(int width, int height, QImage *image_brick)
 {
     double PI = 3.14159265;
 
-    if (board_y < height/4*3)
-        board_y = height/4*3;
-
     if (image_brick->pixel(0,0) == QColor(0,0,1).rgb())
     {
-        image_brick->fill(Qt::black);
-        int i;
-        int j;
-        int k;
-        int brick_x;
-        int brick_y;
-        int br_size_x = brick_size_x;
-        int br_size_y = brick_size_y;
-        QRgb color;
-        for (i = 0; i < map.size(); i++)
-        {
-            brick_x = get_brick_coord(i).x();
-            brick_y = get_brick_coord(i).y();
-            color = get_brick_color(i).rgb();
-            for (j = brick_x; j <= brick_x + br_size_x; j++)
-            {
-                for (k = brick_y; k <= brick_y + br_size_y; k++)
-                {
-                    image_brick->setPixel(j,k,color);
-                    if (j == brick_x
-                            || k == brick_y
-                            || j == brick_x + br_size_x
-                            || k == brick_y + br_size_y)
-                        image_brick->setPixel(j,k,QColor(150,150,150).rgb());
-                }
-            }
-
-        }
+        update_img(image_brick);
 
     }
 
@@ -176,7 +156,7 @@ int Level::update(int width, int height, QImage *image_brick)
             ball[i].set_angle(360 + ball[i].get_angle());
         ball[i].set_angle((int)ball[i].get_angle() % 360);
 
-        ball[i].set_speed(height/200); // УБРАТЬ ПОСЛЕ НАСТРОЕК
+        ball[i].set_speed(height/200); // скорость
 
 
         if (ball[i].get_x() <= 0) // левая стенка
@@ -234,6 +214,14 @@ int Level::update(int width, int height, QImage *image_brick)
                         && ball[i].get_y()>= brick_y
                         && ball[i].get_y()<= brick_y+brick_size_y) // если шарик внутри крипичика
                 {
+                    if (super_ball)
+                    {
+                        map.takeAt(j);
+                        update_img(image_brick);
+                        map_colliders[(int)(ball[i].get_x()/brick_size_x)][(int)(ball[i].get_y()/brick_size_y)] = 0;
+                        return map.size();
+                    }
+
                     b = ball[i].get_last_y() - ((ball[i].get_y() - ball[i].get_last_y())/(ball[i].get_x() - ball[i].get_last_x()))*ball[i].get_last_x();
 
                     cross_x_bottom = ((brick_y + brick_size_y) - b)/k; // точки пересечений с гранями
@@ -293,6 +281,7 @@ int Level::update(int width, int height, QImage *image_brick)
                             if (hit == 0)
                             {
                                 map.takeAt(j);
+                                map_colliders[(int)(ball[i].get_x()/brick_size_x)][(int)(ball[i].get_y()/brick_size_y)] = 0;
                             }
                         }
 
@@ -307,14 +296,7 @@ int Level::update(int width, int height, QImage *image_brick)
                             hit = 2;
                     }
 
-                    if (super_ball)
-                    {
-                        map.takeAt(j);
-                        update_img(image_brick);
-                        return map.size();
-                    }
-
-                    else if (hit)
+                    if (hit)
                     {
                         if (hit == 1)
                             ball[i].set_angle(360 - (180 + ball[i].get_angle()));
@@ -326,7 +308,7 @@ int Level::update(int width, int height, QImage *image_brick)
                         else
                         {
                             int near = nearest(sqrt(brick_size_x*brick_size_x+brick_size_y*brick_size_y), i);
-                            while(near != -1)
+                            while (near != -1)
                             {
                                 map.takeAt(near);
                                 near = nearest(sqrt(brick_size_x*brick_size_x+brick_size_y*brick_size_y), i);

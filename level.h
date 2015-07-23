@@ -5,6 +5,7 @@
 #include <cmath>
 #include <QImage>
 #include <QRgb>
+#include <QTime>
 
 #include "brick.h"
 #include "ball.h"
@@ -31,6 +32,7 @@ private:
 
     bool explosive; // бонусы
     bool super_ball;
+    bool bonus_width;
 
 public:
     Level();
@@ -47,6 +49,7 @@ public:
     void set_board_width(int width) { board_width = width; }
     void set_explosive(bool exp) { explosive = exp; }
     void set_super_ball(bool sb) { super_ball = sb; }
+    void set_bonus_width(bool wd) { bonus_width = wd; }
 
     void double_ball();
 
@@ -70,6 +73,7 @@ public:
     int get_ball_counter() { return ball.size(); }
     bool get_explosive() { return explosive; }
     bool get_super_ball() { return super_ball; }
+    bool get_bonus_width() { return bonus_width; }
     QPoint get_brick_coord(int i) { return map[i].get_coord(); }
     QColor get_brick_color(int i) { return map[i].get_color(); }
 };

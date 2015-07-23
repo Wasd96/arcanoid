@@ -10,6 +10,12 @@
     <height>850</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>700</width>
+    <height>600</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Widget</string>
   </property>
@@ -22,7 +28,37 @@
 
 Widget {
 background-color: black;
-}</string>
+}
+
+QScrollBar {
+background: rgba(44,44,44,255);
+}
+QScrollBar::groove:vertical  {
+    /*border: 1px solid blue;*/
+    width: 3px;
+    background:gray;
+    /*margin: 5px 0;*/
+}
+ 
+QScrollBar::handle  {
+    background: green;
+    border: 2px groove blue;
+    height: 30px;
+	width: 20px;
+    /*margin: 0 -14px; */
+    border-radius: 3px;
+}
+
+QScrollBar::handle:pressed  {
+    background: orange;
+    border: 2px groove darkblue;
+    height: 30px;
+	width: 20px;
+   /* margin: 0 -14px; */
+    border-radius: 3px;
+}
+QScrollBar::add-page:vertical { background: transparent; }
+QScrollBar::sub-page:vertical { background: transparent; }</string>
   </property>
   <widget class="QPushButton" name="start_button">
    <property name="geometry">
@@ -108,7 +144,7 @@ QPushButton:pressed  {
   <widget class="QPushButton" name="menu">
    <property name="geometry">
     <rect>
-     <x>40</x>
+     <x>10</x>
      <y>760</y>
      <width>308</width>
      <height>75</height>
@@ -357,6 +393,66 @@ QPushButton:pressed  {
    </property>
    <property name="text">
     <string>Обновить кэш</string>
+   </property>
+  </widget>
+  <widget class="QProgressBar" name="loading_full">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>750</y>
+     <width>161</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QProgressBar {
+border-color: gray;
+border-width: 2px;
+border-style: solid;
+color: rgba(0,0,0,0);
+background-color: black;
+text-align: center;
+}
+
+QProgressBar:chunk  {
+background-color: green;
+width: 10px;
+margin: 1px;
+}
+</string>
+   </property>
+   <property name="value">
+    <number>24</number>
+   </property>
+  </widget>
+  <widget class="QProgressBar" name="loading_part">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>800</y>
+     <width>161</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QProgressBar {
+border-color: gray;
+border-width: 2px;
+border-style: solid;
+color: rgba(0,0,0,0);
+background-color: black;
+text-align: center;
+}
+
+QProgressBar:chunk  {
+background-color: green;
+width: 10px;
+margin: 1px;
+}
+</string>
+   </property>
+   <property name="value">
+    <number>50</number>
    </property>
   </widget>
  </widget>

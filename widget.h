@@ -55,6 +55,8 @@ private slots:
 
     void on_refresh_cache_clicked();
 
+    void resizeEvent(QResizeEvent *);
+
 private:
     Ui::Widget *ui; // Qt-шный виджет
 
@@ -68,12 +70,19 @@ private:
     bool dir_search;
     bool image_search;
     bool settings;
+    bool about;
     bool first_time;
+    bool first_resize;
+    bool turn_back;
+    int old_w;
+    int old_h;
 
     int bonus_width;
     int bonus_explosive;
     int bonus_super_ball;
 
+    bool loading;
+    bool refreshing;
     QColor opacity_color;
     QString opacity_text;
 
@@ -86,6 +95,7 @@ private:
     QStringList cache_dirs_with_img;
     QList <QPixmap> cache_pixmap_array;
     QList <QString> cache_img_time;
+    QList <QList <QPixmap> > cache_images_in_dirs;
 
     QImage *img; // картинка
     QImage *image_brick;
