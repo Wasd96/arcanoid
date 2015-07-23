@@ -1,6 +1,6 @@
 #include "level.h"
 
-Level::Level()
+Level::Level() // конструктор
 {
     brick_size_x = 5;
     brick_size_y = 5;
@@ -38,18 +38,6 @@ Level::Level(int w, int h, double angle)
     bonus_width = false;
 }
 
-void Level::set_brick_size(int w, int h)
-{
-    brick_size_x = w / grid_x;
-    brick_size_y = h/2 / grid_y; // (h/2) - чтобы не занимало все пространсвто
-}
-
-void Level::set_grid(int x, int y)
-{
-    grid_x = x;
-    grid_y = y;
-}
-
 void Level::set_board_coord(int x, int y)
 {
     board_x = x;
@@ -69,27 +57,27 @@ void Level::set_ball_angle(int _angle, int i)
 
 int Level::nearest(int distance, int ball_id)
 {
-    double lenx;
+    double lenx; // расстояния
     double leny;
     for (int i = 0; i < map.size(); i++)
     {
         lenx = abs(ball[ball_id].get_x() - (map[i].get_coord().x() + brick_size_x/2));
         leny = abs(ball[ball_id].get_y() - (map[i].get_coord().y() + brick_size_y/2));
-        if (sqrt(lenx*lenx + leny*leny) < distance)
+        if (sqrt(lenx*lenx + leny*leny) < distance) // если ближе заданного
         {
-            return i;
+            return i; // то возвращаем id блока
         }
 
     }
-    return -1;
+    return -1; // не нашел
 }
 
 void Level::double_ball()
 {
     int cur_ball_size = ball.size();
-    for (int i = 0; i < cur_ball_size; i++)
+    for (int i = 0; i < cur_ball_size; i++) // для каждого шара
     {
-        ball[i].set_angle(ball[i].get_angle()-45);
+        ball[i].set_angle(ball[i].get_angle()-45); // разлет под 90 градусов
         ball.append(Ball(ball[i].get_x(),
                          ball[i].get_y(),
                          ball[i].get_speed(),
@@ -100,10 +88,8 @@ void Level::double_ball()
 
 void Level::update_img(QImage *image_brick)
 {
-    QTime imgupd;
-    imgupd.start();
 
-    image_brick->fill(Qt::black);
+    image_brick->fill(Qt::black); // заливка
     int i;
     int j;
     int k;
@@ -112,7 +98,7 @@ void Level::update_img(QImage *image_brick)
     int br_size_x = brick_size_x;
     int br_size_y = brick_size_y;
     QRgb color;
-    QRgb color_border = QColor(150,150,150).rgb();
+    QRgb color_border = QColor(150,150,150).rgb(); // цвет рамки блока
     int m_size = map.size();
     for (i = 0; i < m_size; i++)
     {
@@ -123,33 +109,28 @@ void Level::update_img(QImage *image_brick)
         {
             for (k = brick_y; k <= brick_y + br_size_y; k++)
             {
-
-                image_brick->setPixel(j,k,color);
+                image_brick->setPixel(j,k,color); // закрашиваем блок
                 if (j == brick_x
                         || k == brick_y
                         || j == brick_x + br_size_x
                         || k == brick_y + br_size_y)
-                    image_brick->setPixel(j,k,color_border);
+                    image_brick->setPixel(j,k,color_border); // рисуем границу
             }
         }
-
     }
-
-    qDebug() << imgupd.elapsed();
 }
 
 int Level::update(int width, int height, QImage *image_brick)
 {
     double PI = 3.14159265;
 
-    if (image_brick->pixel(0,0) == QColor(0,0,1).rgb())
-    {
-        update_img(image_brick);
-
+    if (image_brick->pixel(0,0) == QColor(0,0,1).rgb()) // если игровая картинка еще
+    {                                                   // не отрисована
+        update_img(image_brick); // перерисуем
     }
 
 
-    int hit = 0; // флаг столкновения
+    int hit = 0; // флаг столкновения с блоком
     for (int i = 0; i < ball.size(); i++)
     {
         if (ball[i].get_angle() < 0) // приведение угла для подсчета
@@ -296,14 +277,14 @@ int Level::update(int width, int height, QImage *image_brick)
                             hit = 2;
                     }
 
-                    if (hit)
+                    if (hit) // если был удар
                     {
                         if (hit == 1)
                             ball[i].set_angle(360 - (180 + ball[i].get_angle()));
                         if (hit == 2)
                             ball[i].set_angle(-ball[i].get_angle());
 
-                        if (!explosive)
+                        if (!explosive) // если это не взрывной удар
                             map.takeAt(j);
                         else
                         {
@@ -364,7 +345,7 @@ int Level::update(int width, int height, QImage *image_brick)
 }
 
 
-int Level::load_map(QImage* img, int w, int h)
+int Level::load_map(QImage* img, int w, int h) // создание карты
 {
 
     board_width = w/6;
@@ -397,7 +378,7 @@ int Level::load_map(QImage* img, int w, int h)
         {
             for (brick_size_x = 5; brick_size_x <= w_use/grid_max*5; brick_size_x++)
             {
-                 if (grid_x <= 20)
+                 if (grid_x <= 25)
                     {
                         if (wdiff >= abs(w_use - (brick_size_x)*grid_x))
                         {
@@ -407,7 +388,7 @@ int Level::load_map(QImage* img, int w, int h)
                         }
                     }
                 else
-                        if (wdiff >= abs(w_use - (brick_size_x)*grid_x)) // пытаемся больше 20 не ставить
+                        if (wdiff > abs(w_use - (brick_size_x)*grid_x)) // пытаемся больше 25 не ставить
                         {
                             wdiff = abs(w_use - brick_size_x*grid_x);
                             least_brick_size_x = brick_size_x;
@@ -448,7 +429,7 @@ int Level::load_map(QImage* img, int w, int h)
     int a = 0;
     QImage alpha_channel; // прозрачность картинки
     QColor alpha;
-    if (img->hasAlphaChannel())
+    if (img->hasAlphaChannel()) // если она есть
         alpha_channel = img->alphaChannel();
 
     for (int i = 0; i < grid_x; i++)
@@ -483,7 +464,7 @@ int Level::load_map(QImage* img, int w, int h)
 
             if (img->hasAlphaChannel())
             {
-                if (a > 100) // если кирпичек не прозрачнее порога, то его добавляем
+                if (a > 100) // если кирпичик не прозрачнее порога, то его добавляем
                 {
                     Brick *brick;
                     brick = new Brick(QPoint(i*brick_size_x, j*brick_size_y), color);
@@ -509,7 +490,7 @@ int Level::load_map(QImage* img, int w, int h)
         for (int j = 0; j < grid_y; j++)
             map_colliders[i][j] = 0;
 
-    for (int i = 0; i < grid_x; i++)
+    for (int i = 0; i < grid_x; i++) // заполение карты столкновений
     {
         for (int j = 0; j < grid_y; j++)
         {

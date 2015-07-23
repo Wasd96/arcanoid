@@ -28,7 +28,7 @@ private:
     QList <int> hit_cooldown; // задержка удара
 
     QList <Brick> map; // карта
-    int** map_colliders;
+    int** map_colliders; // карта столкновений для проверки столкновений
 
     bool explosive; // бонусы
     bool super_ball;
@@ -39,10 +39,8 @@ public:
     Level(int w, int h, double angle);
 
     int load_map(QImage* img, int w, int h); // создать карту
-    int nearest(int distance, int ball_id); // есть ли рядом блоки
+    int nearest(int distance, int ball_id); // ближайший блок в радиусе distance
 
-    void set_brick_size(int w, int h);
-    void set_grid(int x, int y); // установить размеры сетки
     void set_board_coord(int x, int y);
     void set_ball_coord(double _x, double _y, int i);
     void set_ball_angle(int _angle, int i);
@@ -51,10 +49,10 @@ public:
     void set_super_ball(bool sb) { super_ball = sb; }
     void set_bonus_width(bool wd) { bonus_width = wd; }
 
-    void double_ball();
+    void double_ball(); // удвоить кол-во шаров
 
     int update(int width, int height, QImage *image_brick); // итерация игрового мира
-    void update_img(QImage *image_brick);
+    void update_img(QImage *image_brick); // перерисовать изображение
 
     double get_ball_x(int i) { return ball[i].get_x(); }
     double get_ball_y(int i) { return ball[i].get_y(); }

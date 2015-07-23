@@ -14,7 +14,7 @@ Widget::Widget(QWidget *parent) :
     level = new Level(width(), height(), 55+rand()%70); // инициализация основного класса игры
 
     timer = startTimer(15); // таймер обработки шарика и отрисовки
-    bonus_width = 0;
+    bonus_width = 0; // здесь и далее обнуление всемозможных переменных
     bonus_explosive = 0;
     bonus_super_ball = 0;
     game_running = false;
@@ -47,15 +47,15 @@ Widget::Widget(QWidget *parent) :
     ui->loading_full->setVisible(false);
     ui->loading_part->setVisible(false);
 
-    filter_list.append("*.jpg");
+    filter_list.append("*.jpg"); // добавляем в фильтр форматы
     filter_list.append("*.png");
 
 
 
     QFile file("cache.dat");
-    if (file.size() == 0)
+    if (file.size() == 0) // если кэш не существовал
     {
-        if(file.open(QIODevice::WriteOnly))
+        if(file.open(QIODevice::WriteOnly)) // пытаемся создать его
         {
             qDebug() << "File Has Been Created / Already exist";
         }
@@ -65,7 +65,7 @@ Widget::Widget(QWidget *parent) :
     file.close();
     file.open(QIODevice::ReadOnly);
 
-    if (file.size() == 0)
+    if (file.size() == 0) // если кэш пуст, то значит первый заход
         first_time = true;
 
     QString string;
@@ -76,7 +76,7 @@ Widget::Widget(QWidget *parent) :
         QDataStream stream(&file);
         do
         {
-            stream >> string >> time >> pixmap;
+            stream >> string >> time >> pixmap; // выгружаем из кэша названия папок и картинки для них
             if (string != "")
             {
                 cache_dirs_with_img.append(string);
@@ -91,11 +91,11 @@ Widget::Widget(QWidget *parent) :
 
 #ifdef Q_OS_WIN
     setMouseTracking(true);
-    setWindowIcon(QIcon(":/new/prefix1/icon.png"));
+    setWindowIcon(QIcon(":/new/prefix1/icon.png")); // устанавлваем иконку
     setWindowTitle("Arcanoid");
 #endif
 
-    image_brick = new QImage(5,5,QImage::Format_RGB16);
+    image_brick = new QImage(5,5,QImage::Format_RGB16); // создание заготовки игровой картинки
 
     old_h = height();
     old_w = width();
@@ -103,20 +103,23 @@ Widget::Widget(QWidget *parent) :
     QString temp_string;
     for (int i = 0; i < cache_dirs_with_img.size(); i++)
     {
+        int counter_ = 0; // система против одинаковых папок
         for (int j = 0; j < i; j++)
         {
             QString str1 = cache_dirs_with_img.at(j).right(cache_dirs_with_img.at(j).size()-1 - cache_dirs_with_img.at(j).lastIndexOf("/"));
             QString str2 = cache_dirs_with_img.at(i).right(cache_dirs_with_img.at(i).size()-1 - cache_dirs_with_img.at(i).lastIndexOf("/"));
             if (str1 == str2 && str2 != "")
             {
-                temp_string = str2.append("_%1").arg(i);
-                break;
+                counter_++;
             }
             else
                 temp_string = str2;
         }
+        if (counter_ > 0) // все еще она
+            temp_string = cache_dirs_with_img.at(i).right(cache_dirs_with_img.at(i).size()-1 - cache_dirs_with_img.at(i).lastIndexOf("/")).append("_%1").arg(counter_);
 
-        QFile file_cache("cache" + temp_string);
+
+        QFile file_cache("cache" + temp_string); // открываем кэш для этой папки
         if (file_cache.size() == 0)
         {
             if(file_cache.open(QIODevice::WriteOnly))
@@ -141,7 +144,7 @@ Widget::Widget(QWidget *parent) :
             QDataStream stream(&file_cache);
             do
             {
-                stream >> counter >> pixmap;
+                stream >> counter >> pixmap; // выгружаем картинки
                 {
                     pix.append(pixmap);
                 }
@@ -157,20 +160,15 @@ Widget::~Widget()
 {
     delete ui;
     delete level;
-    //delete img;
 }
 
 void Widget::timerEvent(QTimerEvent *t)
 {
-    QTime time;
-    time.start();
-
     if (t->timerId() == timer)
     {
         if (game_running && !pause && !turn_back)
         {
-
-            if (bonus_width > 0)
+            if (bonus_width > 0) // обсчет бонусов
                 bonus_width --;
             if (bonus_explosive > 0)
                 bonus_explosive --;
@@ -204,6 +202,9 @@ void Widget::timerEvent(QTimerEvent *t)
                 level->set_super_ball(false);
                 level->set_explosive(false);
                 level->set_bonus_width(false);
+                bonus_width = 0;
+                bonus_explosive = 0;
+                bonus_super_ball = 0;
             }
             else if (state == 0) // победа
             {
@@ -215,8 +216,11 @@ void Widget::timerEvent(QTimerEvent *t)
                 level->set_super_ball(false);
                 level->set_explosive(false);
                 level->set_bonus_width(false);
+                bonus_width = 0;
+                bonus_explosive = 0;
+                bonus_super_ball = 0;
             }
-            else if (state > 0)
+            else if (state > 0) // нормальное обновление
             {
                 ui->status->setValue(ui->status->maximum() - state);
 
@@ -270,26 +274,17 @@ void Widget::timerEvent(QTimerEvent *t)
                     }
                 }
             }
-
-
-
-            //qDebug() << "updated and bonus calc: " << time.elapsed();
-
             repaint();
         }
-
         else
             if (opacity_color.alpha() > 0)
             {
                 repaint();
             }
-
-    //qDebug() << "updated and bonus calc and repaint: " << time.elapsed();
-
     }
 
 #ifdef Q_OS_WIN
-    if (game_running && !pause)
+    if (game_running && !pause) // блокировка курсора внутри окна
     {
         if (cursor().pos().x() - geometry().x() < level->get_board_width()/2-20)
         {
@@ -309,23 +304,16 @@ void Widget::timerEvent(QTimerEvent *t)
         }
     }
 #endif
-
-    /*int elapsed = time.elapsed();
-    if (elapsed > 0)
-        qDebug() << "calculating time: " << elapsed;*/
 }
 
 void Widget::paintEvent(QPaintEvent *ev) // отрисовка
 {
-    QTime time;
-    time.start();
-
     QPainter p(this);
     QPen pen;
     QBrush brush;
     QFont font;
 
-    if (turn_back)
+    if (turn_back) // если требуется повернуть экран
     {
         font.setPixelSize(100);
         pen.setColor(Qt::red);
@@ -335,7 +323,7 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
         return;
     }
 
-    // отрисовка элементов
+    // отрисовка элементов меню
     if (!game_running)
     {
 
@@ -350,13 +338,13 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
     }
 
 #ifdef Q_OS_WIN
-    if (game_running && !pause)
+    if (game_running && !pause) // убираем курсор
     {
         QCursor curs;
         curs.setShape(Qt::BlankCursor);
         setCursor(curs);
     }
-    else
+    else // если игра не идет, то курсор виден
     {
         QCursor curs;
         curs.setShape(Qt::ArrowCursor);
@@ -466,7 +454,7 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
 
     }
 
-    if (opacity_color.alpha() > 0)
+    if (opacity_color.alpha() > 0) // отрисовка текста бонусов
     {
         pen.setColor(opacity_color);
         p.setPen(pen);
@@ -477,7 +465,7 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
             opacity_color.setAlpha(opacity_color.alpha()-1);
     }
 
-    if (dir_search && !refreshing)
+    if (dir_search && !refreshing) // отрисовка поиска папок
     {
         int shift = ui->verticalSlider->value()*(width()/5+60)/50;
         pen.setColor(Qt::white);
@@ -509,7 +497,7 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
         p.drawText(10,50,"Выберите папку:");
     }
 
-    if (image_search && !refreshing)
+    if (image_search && !refreshing) // отрисовка поиска изображений
     {
         int shift = ui->verticalSlider->value()*(width()/6+5)/50;
         pen.setColor(Qt::white);
@@ -541,7 +529,7 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
 
     }
 
-    if (settings)
+    if (settings) // отрисовка настроек
     {
         ui->refresh_cache->setGeometry(width()/2 - ui->refresh_cache->width()/2,
                                        height()/7*4, width()/2, height()/10);
@@ -581,14 +569,13 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
         p.drawText(width()/2-str.length()*font.pixelSize()/4, height()/9*7, str);
     }
 
-    if (first_time)
+    if (first_time) // первый заход
     {
-        on_about_button_clicked();
+        on_about_button_clicked(); // отправляем читать "об игре"
     }
 
-    if (loading)
+    if (loading) // загрузка
     {
-        //qDebug() << "loading";
         pen.setColor(Qt::white);
         font.setPixelSize(width()/18);
         p.setFont(font);
@@ -596,9 +583,6 @@ void Widget::paintEvent(QPaintEvent *ev) // отрисовка
         p.fillRect(0,0,width(),height(),QColor(0,0,0,150));
         p.drawText(0,0,width(),height(),Qt::AlignCenter,"Игра не зависла.\nПожалуйста, подождите...");
     }
-
-    //qDebug() << "drawing time: " << time.elapsed();
-
 }
 
 void Widget::menu_change_state(bool state)     // свернуть/показать меню
@@ -627,16 +611,10 @@ void Widget::on_exit_button_clicked()
     exit(0);
 }
 
-
-
-void Widget::on_start_button_clicked()
+void Widget::on_start_button_clicked() // старт игры
 {
     loading = true;
     repaint();
-
-    QTime time1;
-    time1.start();
-
     menu_change_state(false);
     ui->status->setValue(0);
     ui->status->setGeometry(width(),-100,10,10);
@@ -644,23 +622,7 @@ void Widget::on_start_button_clicked()
     ui->verticalSlider->setValue(0);
     ui->verticalSlider->setGeometry(width()-width()/10,50,width()/10,height()-100);
 
-    // для виндуса!!!
-    /*QFileDialog fd;
-    fd.setMaximumSize(width(), height());
-    fd.setGeometry(30,0,width(), height());
-    //fd.setSizePolicy();
-    QString str = fd.getOpenFileName(0, "Choose Image", "", "*.png *.jpg");
-    qDebug() << str << fd.geometry();
-    if (str == "")
-    {
-        ui->start_button->pressed(); // пофиксить
-        qDebug() << "lol";
-    }
-    img = new QImage(str);*/
-
-    //!
-
-    QApplication::processEvents();
+    QApplication::processEvents(); // обновление элементов интерфейса
 
     pixmap_array.clear();
     images.clear();
@@ -670,7 +632,7 @@ void Widget::on_start_button_clicked()
 
     QDir dir;
     QFileInfoList info_list;
-    if (cache_dirs_with_img.size() != 0)
+    if (cache_dirs_with_img.size() != 0) // если кэш есть
     {
         for (int i = 0; i < cache_dirs_with_img.size(); i++)
         {
@@ -678,12 +640,12 @@ void Widget::on_start_button_clicked()
             info_list = dir.entryInfoList(filter_list, QDir::Files | QDir::NoSymLinks, QDir::Time);
             QString str;
             str = info_list.first().lastModified().toString();
-            if (str == cache_img_time.at(i))
+            if (str == cache_img_time.at(i)) // если дата в кэше и настоящая совпадают
             {
                 dirs_with_img.append(cache_dirs_with_img.at(i));
                 pixmap_array.append(cache_pixmap_array.at(i));
             }
-            else
+            else // иначе грузим новые
             {
                 dirs_with_img.append(cache_dirs_with_img.at(i));
                 pixmap_array.append(info_list.first().filePath());
@@ -699,8 +661,8 @@ void Widget::on_start_button_clicked()
             }
         }
         ui->verticalSlider->setMaximum(dirs_with_img.size()/4*50);
-
     }
+
     int status = 0;
     #ifdef Q_OS_WIN // кроссплатформенность
     status = find_all_img("C:/",0);
@@ -739,23 +701,15 @@ void Widget::on_start_button_clicked()
     }
 
     loading = false;
-
-
-    //qDebug() << dirs_with_img;
-
-    qDebug() << time1.elapsed();
-
     QApplication::processEvents();
-
     repaint();
-    //ui->verticalSlider->setValue(ui->verticalSlider->value());
 }
 
 void Widget::mousePressEvent(QMouseEvent *m)
 {
-    if (game_running && !pause)
+    if (game_running && !pause) // обработка нажатий
     {
-#ifdef Q_OS_WIN // кроссплатформенность
+#ifdef Q_OS_WIN
 int add_y = -100;
 #else
 int add_y = 100;
@@ -774,7 +728,7 @@ int add_y = 100;
     }
 
 
-    if (dir_search && !refreshing && !turn_back)
+    if (dir_search && !refreshing && !turn_back) // выбор папок
     {
         int shift = ui->verticalSlider->value()*(width()/5+60)/50;
         for (int i = 0; i < dirs_with_img.size(); i++)
@@ -790,19 +744,20 @@ int add_y = 100;
                 dir_search = false;
                 image_search = true;
                 qDebug() << "pressed" << i;
-
-                //ui->verticalSlider->setValue(0);
                 pixmap_array.clear();
 
                 if (cache_images_in_dirs.size() > 0)
                 {
                     pixmap_array = cache_images_in_dirs.at(i);
+                    pixmap_array.takeLast();
                     QDir dir;
                     dir.cd(dirs_with_img.at(i));
                     QStringList files_list = dir.entryList(filter_list, QDir::Files | QDir::NoSymLinks, QDir::Time);
                     for (int k = 0; k < files_list.size(); k++)
                     {
-                        images.append(QString(dirs_with_img.at(i)+"/"+files_list.at(k)));
+                        QFile file(QString(dirs_with_img.at(i)+"/"+files_list.at(k)));
+                        if (file.size() > 0) // если изображение валидно
+                            images.append(QString(dirs_with_img.at(i)+"/"+files_list.at(k)));
                     }
                     ui->verticalSlider->setMaximum(images.size()/5*50);
                 }
@@ -814,10 +769,9 @@ int add_y = 100;
                 loading = false;
                 repaint();
             }
-
         }
     }
-    else if (image_search && !refreshing && !turn_back)
+    else if (image_search && !refreshing && !turn_back) // выбор картинки
     {
         int shift = ui->verticalSlider->value()*(width()/6+5)/50;
         for (int i = 0; i < images.size(); i++)
@@ -900,6 +854,15 @@ void Widget::on_menu_clicked() // в меню
     if (first_time)
         first_time = false;
     menu_change_state(true);
+
+    if (level->get_bonus_width() == true)
+        level->set_board_width(level->get_board_width()/2);
+    level->set_super_ball(false);
+    level->set_explosive(false);
+    level->set_bonus_width(false);
+    bonus_width = 0;
+    bonus_explosive = 0;
+    bonus_super_ball = 0;
 }
 
 void Widget::on_about_button_clicked()
@@ -937,16 +900,16 @@ void Widget::on_about_button_clicked()
                        "Когда все блоки будут разбиты - игра будет пройдена. В этом Вам помогут различные бонусы. "
                        "Клавиша \"Назад\" или \"Escape\" - пауза во время игры, или возврат в предыдущее меню. "
                        "Советую при первом запуске обновить кэш в настройках и перезагрузить игру, "
-                       "но придется немного подождать.\n\n"
+                       "придется немного подождать. Слайдер справа при выборе картинки сделан не просто так!\n\n"
                        "При большом желании со мной можно связаться в вк - vk.com/just_another_member , "
                        "или пишите на e-mail - wasd3680@yandex.ru\n\nРепозиторий проекта на гитхабе "
-                       "доступен всем желающим и может быть найден по адресу https://github.com/Wasd96/arcanoid");
+                       "доступен всем желающим и может быть найден по адресу https://github.com/Wasd96/arcanoid\n\n"
+                       "Если же случилось невероятное и Вам игра очень-очень понравилась, то можете поддержать меня, "
+                       "отправив пару рублей на Яндекс.Деньги: 410011746838101.");
 
     ui->menu->setGeometry(0, height()-height()/10, width()/4, height()/10);
     ui->menu->setVisible(true);
     ui->menu->setEnabled(true);
-
-    //repaint();
 }
 
 void Widget::on_settings_button_clicked()
@@ -976,71 +939,41 @@ void Widget::on_settings_button_clicked()
 
 void Widget::keyPressEvent(QKeyEvent *k)
 {
-    qDebug() << k->key();
-    // 16777313 - клавиша назад
-    // 16777301 - клавиша функций
     if (!turn_back && !refreshing)
     {
-#ifdef Q_OS_WIN // кроссплатформенность
-    if (k->key() == Qt::Key_Escape)
-    {
-        if (game_running)
-            pause = !pause;
+        if (k->key() == Qt::Key_Escape  || k->key() == Qt::Key_Back)
+        {
+            if (game_running)
+                pause = !pause;
 
-        if (dir_search)
-        {
-            dir_search = false;
-            menu_change_state(true);
-        }
-        if (image_search)
-        {
-            dir_search = true;
-            image_search = false;
-            pixmap_array.clear();
-            images.clear();
-            on_start_button_clicked();
-        }
-        if (settings || about)
-        {
-            settings = false;
-            about = false;
-            on_menu_clicked();
-        }
-
-    }
-#else
-    if (k->key() == Qt::Key_Back)
-    {
-        if (game_running)
-            pause = !pause;
-        if (dir_search)
-        {
-            dir_search = false;
-            menu_change_state(true);
-        }
-        if (image_search)
-        {
-            dir_search = true;
-            image_search = false;
-            pixmap_array.clear();
-            images.clear();
-
-            dirs_with_img = cache_dirs_with_img;
-            for (int i = 0; i < cache_dirs_with_img.size(); i++)
+            if (dir_search)
             {
-                pixmap_array.append(cache_pixmap_array.at(i));
+                dir_search = false;
+                menu_change_state(true);
             }
-            repaint();
-        }
-        if (settings || about)
-        {
-            settings = false;
-            about = false;
-            on_menu_clicked();
-        }
+            if (image_search)
+            {
+                dir_search = true;
+                image_search = false;
+                pixmap_array.clear();
+                images.clear();
 
+                dirs_with_img = cache_dirs_with_img;
+                for (int i = 0; i < cache_dirs_with_img.size(); i++)
+                {
+                    pixmap_array.append(cache_pixmap_array.at(i));
+                }
+                repaint();
+            }
+            if (settings || about)
+            {
+                settings = false;
+                about = false;
+                on_menu_clicked();
+            }
+
+        }
     }
-#endif
 
     if (pause)
     {
@@ -1054,8 +987,6 @@ void Widget::keyPressEvent(QKeyEvent *k)
         ui->menu->setEnabled(false);
     }
     repaint();
-
-    }
 }
 
 
@@ -1066,7 +997,7 @@ int Widget::find_all_img(QString start_dir, bool check)
     QStringList dir_list = dir.entryList(QDir::Dirs | QDir::NoSymLinks);
     QStringList files_list = dir.entryList(filter_list, QDir::Files | QDir::NoSymLinks, QDir::Time);
 
-    if (!check)
+    if (!check) // если смотрим на кэш
     {
         if (cache_pixmap_array.size() != 0)
             return 1;
@@ -1075,17 +1006,17 @@ int Widget::find_all_img(QString start_dir, bool check)
 
     if (dir_search)
     {
-        if (files_list.size() != 0)
+        if (files_list.size() != 0) // если список файлов не пуст
         {
             qDebug() << start_dir << files_list.size();
             QApplication::processEvents();
-            dirs_with_img.append(start_dir);
+            dirs_with_img.append(start_dir); // сохраняем папку
             pixmap_array.append(QPixmap(start_dir+"/"+files_list.first()).scaled(width()/5,width()/5));
         }
 
         for (int i = 0; i < dir_list.size(); i++)
         {
-            if (start_dir == "C:/")
+            if (start_dir == "C:/") // костыль для винды
             {
                 if (dir_list.at(i) == "Users")
                     find_all_img(start_dir + "/" + dir_list.at(i), 1);
@@ -1119,17 +1050,18 @@ int Widget::find_all_img(QString start_dir, bool check)
         images.clear();
         for (int i = 0; i < files_list.size(); i++)
         {
-            images.append(QString(start_dir+"/"+files_list.at(i)));
+            QFile file(QString(start_dir+"/"+files_list.at(i)));
+            if (file.size() > 0) // если картинка валидна
+                images.append(QString(start_dir+"/"+files_list.at(i)));
         }
         ui->verticalSlider->setMaximum(images.size()/5*50);
     }
     return 0;
 }
 
-
 void Widget::on_verticalSlider_valueChanged(int value)
 {
-    if (image_search)
+    if (image_search) // динамическая подгрузка изображений
     {
         for (int i = pixmap_array.size(); i < (value+350)/50*6; i++)
         {
@@ -1146,11 +1078,11 @@ void Widget::on_verticalSlider_valueChanged(int value)
     repaint();
 }
 
-void Widget::on_refresh_cache_clicked()
+void Widget::on_refresh_cache_clicked() // обновление кэша
 {
     loading = true;
     repaint();
-    ui->menu->setEnabled(false);
+    ui->menu->setEnabled(false); // блокируем кнопки на время
     ui->refresh_cache->setEnabled(false);
     refreshing = true;
     QApplication::processEvents();
@@ -1207,19 +1139,20 @@ void Widget::on_refresh_cache_clicked()
     QString temp_string;
     for (int i = 0; i < cache_dirs_with_img.size(); i++)
     {
-
+        int counter = 0; // система против одинаковых папок
         for (int j = 0; j < i; j++)
         {
             QString str1 = cache_dirs_with_img.at(j).right(cache_dirs_with_img.at(j).size()-1 - cache_dirs_with_img.at(j).lastIndexOf("/"));
             QString str2 = cache_dirs_with_img.at(i).right(cache_dirs_with_img.at(i).size()-1 - cache_dirs_with_img.at(i).lastIndexOf("/"));
             if (str1 == str2 && str2 != "")
             {
-                temp_string = str2.append("_%1").arg(i);
-                break;
+                counter++;
             }
             else
                 temp_string = str2;
         }
+        if (counter > 0)
+            temp_string = cache_dirs_with_img.at(i).right(cache_dirs_with_img.at(i).size()-1 - cache_dirs_with_img.at(i).lastIndexOf("/")).append("_%1").arg(counter);
 
         QFile file_cache("cache"+ temp_string);
         file_cache.open(QIODevice::WriteOnly);
@@ -1233,11 +1166,10 @@ void Widget::on_refresh_cache_clicked()
             find_all_img(cache_dirs_with_img.at(i), 1);
 
             int limit = 40;
-            if (images.size() < 40)
+            if (images.size() < 40) // определяем кол-во кэшируемых картинок
                 limit = images.size();
 
             ui->loading_part->setMaximum(limit);
-
 
             for (int j = 0; j < limit; j++)
             {
@@ -1250,10 +1182,8 @@ void Widget::on_refresh_cache_clicked()
             cache_images_in_dirs.append(pix);
 
             pix.clear();
-
             file_cache.close();
             cache_images_in_dirs.append(pix);
-
             ui->loading_part->setValue(0);
             ui->loading_full->setValue(i);
             QApplication::processEvents();
@@ -1262,8 +1192,7 @@ void Widget::on_refresh_cache_clicked()
 
     image_search = false;
 
-
-    ui->loading_full->setValue(ui->loading_full->maximum());
+    ui->loading_full->setValue(ui->loading_full->maximum()); // загрузка окончена
     ui->loading_part->setValue(ui->loading_part->maximum());
 
     loading = false;
@@ -1274,8 +1203,6 @@ void Widget::on_refresh_cache_clicked()
 
 void Widget::resizeEvent(QResizeEvent *re) // метод от поворота экрана
 {
-
-    qDebug() << re->size();
     if (about)
         ui->about->setGeometry(width()/20, height()/20, width()/20*18, height()/20*17);
 
@@ -1285,7 +1212,7 @@ void Widget::resizeEvent(QResizeEvent *re) // метод от поворота �
     ui->menu->setGeometry(0, height()-height()/10, width()/4, height()/10);
 
 #ifdef Q_OS_WIN
-#else
+#else // анти-поворот работает только для не-виндоусов
     if (!first_resize)
     {
         if (abs(old_w - height()) < 100 && abs(old_h - width()) < 100)
@@ -1323,7 +1250,6 @@ void Widget::resizeEvent(QResizeEvent *re) // метод от поворота �
 
         ui->menu->setGeometry(0, height()-height()/10, width()/4, height()/10);
     }
-
     old_h = height();
     old_w = width();
     first_resize = false;

@@ -37,7 +37,7 @@ public:
 
     void keyPressEvent(QKeyEvent *k);
 
-    int find_all_img(QString start_dir, bool check);
+    int find_all_img(QString start_dir, bool check); // поиск изображений
 
 private slots:
 
@@ -67,38 +67,38 @@ private:
     bool game_over; // игра проиграна
     bool game_win; // победа
     bool pause; // пауза
-    bool dir_search;
-    bool image_search;
-    bool settings;
-    bool about;
-    bool first_time;
-    bool first_resize;
-    bool turn_back;
-    int old_w;
-    int old_h;
+    bool dir_search; // флаг поиска папок
+    bool image_search; // флаг поиска картинок
+    bool settings; // флаг настроек
+    bool about; // флаг "об игре"
+    bool first_time; // флаг первого захода
+    bool first_resize; // костыль для системы анти-поворота
+    bool turn_back; // требовние повернуть телефон
+    int old_w; // костыль для системы анти-поворота
+    int old_h; // костыль для системы анти-поворота
 
-    int bonus_width;
-    int bonus_explosive;
-    int bonus_super_ball;
+    int bonus_width; //бонус широкой доски
+    int bonus_explosive; // бонус взрывного шара
+    int bonus_super_ball; // бонус пробивающего щара
 
-    bool loading;
-    bool refreshing;
-    QColor opacity_color;
-    QString opacity_text;
+    bool loading; // флаг загрузки
+    bool refreshing; // флаг обновления кэша
+    QColor opacity_color; // для отображения бонусов
+    QString opacity_text; // для отображения бонусов
 
-    QStringList dirs_with_img;
-    QList <QPixmap> pixmap_array;
-    QStringList images;
-    QList <QString> filter_list;
-    QDir dir;
+    QStringList dirs_with_img; // список папок с картинками
+    QList <QPixmap> pixmap_array; // список картинок
+    QStringList images; // список имен картинок
+    QList <QString> filter_list; // фильтр поиска
+    QDir dir; // действующая папка
 
-    QStringList cache_dirs_with_img;
+    QStringList cache_dirs_with_img; // кэш
     QList <QPixmap> cache_pixmap_array;
     QList <QString> cache_img_time;
     QList <QList <QPixmap> > cache_images_in_dirs;
 
     QImage *img; // картинка
-    QImage *image_brick;
+    QImage *image_brick; // сжатая, игровая картинка
 };
 
 #endif // WIDGET_H
